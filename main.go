@@ -39,18 +39,19 @@ func Draw(renderer *sdl.Renderer, surface *sdl.Surface) {
 	log.Println(CLIENTS)
 	rect := sdl.Rect{0, 0, int32(w), int32(h)}
 	surface.FillRect(&rect, 0xff252525)
+	var r sdl.Rect
 	f := font
 	for i, client := range CLIENTS {
-		r := sdl.Rect{10, int32(10 + (i * (fontSize + 6))), int32(w), int32(h)}
-		if SELECTED == i {
-			f = bold
-		} else {
-			f = font
-		}
 		if SELECTED != i {
+			f = font
+			r = sdl.Rect{10, int32(10 + (i * (fontSize + 6))), int32(w), int32(h)}
 			DrawText(surface, fmt.Sprintf("  %d [%d] %s", i, client.Desktop, client.Name), &r, sdl.Color{200, 200, 200, 1}, f)
 		} else {
-			DrawText(surface, fmt.Sprintf("| %d [%d] %s", i, client.Desktop, client.Name), &r, sdl.Color{255, 255, 255, 1}, f)
+			f = bold
+			r = sdl.Rect{10, int32(10 + (i * (fontSize + 6))), 10, int32(h)}
+			DrawText(surface, fmt.Sprintf("| "), &r, sdl.Color{35, 157, 200, 1}, f)
+			r = sdl.Rect{10 + 14, int32(10 + (i * (fontSize + 6))), int32(w - 10), int32(h)}
+			DrawText(surface, fmt.Sprintf("%d [%d] %s", i, client.Desktop, client.Name), &r, sdl.Color{255, 255, 255, 1}, f)
 		}
 	}
 
@@ -118,10 +119,18 @@ func run() int {
 					Draw(renderer, surface)
 					window.UpdateSurface()
 				}
+				if key == "X" && t.Keysym.Mod == 64 {
+					wid := CLIENTS[SELECTED].WID
+					ewmh.CloseWindow(X, wid)
+					// time.Sleep(1 * time.Second)
+					sdl.Delay(1000)
+					CLIENTS = GetClients()
+					Draw(renderer, surface)
+					window.UpdateSurface()
+				}
 				if (key == "J" && t.Keysym.Mod == 64) || key == "Return" {
 					wid := CLIENTS[SELECTED].WID
 					ewmh.ActiveWindowReq(X, wid)
-					// log.Println(ewmh.ActiveWindowSet(X, wid))
 					running = false
 				}
 				if key == "Escape" || key == "CapsLock" {
@@ -154,6 +163,9 @@ func GetClients() []Client {
 	a, _ := ewmh.ActiveWindowGet(X)
 	for _, wid := range wids {
 		name, err := ewmh.WmNameGet(X, wid)
+		if name == "Shadow" {
+			continue
+		}
 		if err != nil { // not a fatal error
 			log.Println(err)
 			name = ""
