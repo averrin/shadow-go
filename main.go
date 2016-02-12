@@ -22,6 +22,7 @@ var fontSize int
 var X *xgbutil.XUtil
 var font *ttf.Font
 var bold *ttf.Font
+var SHADOW xproto.Window
 
 func DrawText(parent *sdl.Surface, text string, rect *sdl.Rect, color sdl.Color, font *ttf.Font) {
 	log.Println(text)
@@ -139,6 +140,7 @@ func run() int {
 			}
 		}
 	}
+	log.Println(os.Remove("/tmp/shadow.lock"))
 	return 0
 }
 
@@ -164,6 +166,7 @@ func GetClients() []Client {
 	for _, wid := range wids {
 		name, err := ewmh.WmNameGet(X, wid)
 		if name == "Shadow" {
+			SHADOW = wid
 			continue
 		}
 		if err != nil { // not a fatal error
@@ -181,5 +184,18 @@ func GetClients() []Client {
 
 func main() {
 	SELECTED = 0
-	os.Exit(run())
+	lockPath := path.Join("/tmp", "shadow.lock")
+	if fi, _ := os.Stat(lockPath); fi != nil {
+		log.Println(fi)
+		GetClients()
+		ewmh.ActiveWindowReq(X, SHADOW)
+		// file, err := os.Open(initPath)
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
+		// defer file.Close()
+	} else {
+		os.Create(lockPath)
+		os.Exit(run())
+	}
 }
