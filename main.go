@@ -96,6 +96,12 @@ func run() int {
 	for running {
 		for event = sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch t := event.(type) {
+			case *sdl.WindowEvent:
+				if t.Event == sdl.WINDOWEVENT_FOCUS_GAINED {
+					CLIENTS = GetClients()
+					Draw(renderer, surface)
+					window.UpdateSurface()
+				}
 			case *sdl.QuitEvent:
 				running = false
 			case *sdl.KeyUpEvent:
