@@ -46,9 +46,12 @@ func NewTextWidget(renderer *sdl.Renderer, surface *sdl.Surface) *TextWidget {
 	widget.Colors["gray"] = sdl.Color{100, 100, 100, 1}
 	widget.Colors["orange"] = sdl.Color{242, 155, 23, 1}
 
-	dir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	cwd, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	dir := filepath.Join(cwd, "fonts")
 	font, _ := ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Regular.ttf"), fontSize)
 	bold, _ := ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Bold.ttf"), fontSize)
+	// font, _ := ttf.OpenFont(path.Join(dir, "UbuntuMono-R.ttf"), fontSize)
+	// bold, _ := ttf.OpenFont(path.Join(dir, "UbuntuMono-B.ttf"), fontSize)
 	// font, _ = ttf.OpenFont(path.Join(dir, "Inconsolata+Awesome.ttf"), fontSize)
 	// bold.SetStyle(ttf.STYLE_BOLD)
 	widget.Fonts["default"] = font

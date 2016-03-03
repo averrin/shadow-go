@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -74,7 +75,11 @@ func (T *TextWidget) Draw() {
 	T.Renderer.Present()
 }
 
-func run() int {
+type Application struct {
+	Mode string
+}
+
+func (a *Application) run() int {
 	CLIENTS = GetClients()
 	sdl.Init(sdl.INIT_EVERYTHING)
 	ttf.Init()
@@ -161,7 +166,15 @@ func run() int {
 	return 0
 }
 
+func NewApplication(mode string) *Application {
+	app := new(Application)
+	app.Mode = mode
+	return app
+}
+
 func main() {
+	mode := flag.String("mode", "tasks", "shadow mode")
+	flag.Parse()
 	SELECTED = 0
 	lockPath := path.Join("/tmp", "shadow.lock")
 	if fi, _ := os.Stat(lockPath); fi != nil {
@@ -169,7 +182,8 @@ func main() {
 		GetClients()
 		ewmh.ActiveWindowReq(X, SHADOW)
 	} else {
+		app := NewApplication(*mode)
 		os.Create(lockPath)
-		os.Exit(run())
+		os.Exit(app.run())
 	}
 }
