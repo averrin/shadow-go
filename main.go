@@ -30,6 +30,7 @@ func (T *TextWidget) Draw() {
 	for i, client := range CLIENTS {
 		if SELECTED != i {
 			r = sdl.Rect{T.Padding.Left, T.Padding.Top + int32(i*T.LineHeight), int32(w), int32(h)}
+			// TODO: move strip line into T method
 			line = fmt.Sprintf("  %d [%d] %s", i, client.Desktop, client.Name)
 			lw, _, _ := T.Fonts["default"].SizeUTF8(line)
 			for int32(lw) > (int32(w) - T.Padding.Left*2) {
@@ -45,7 +46,7 @@ func (T *TextWidget) Draw() {
 		} else {
 			r = sdl.Rect{T.Padding.Left, T.Padding.Top + int32(i*T.LineHeight), int32(w) - T.Padding.Left, int32(h)}
 			line = fmt.Sprintf("| %d [%d] %s", i, client.Desktop, client.Name)
-			lw, _, _ := T.Fonts["default"].SizeUTF8(line)
+			lw, _, _ := T.Fonts["bold"].SizeUTF8(line)
 			for int32(lw) > (int32(w) - T.Padding.Left*2) {
 				line = line[:len(line)-4] + "…"
 				lw, _, _ = T.Fonts["default"].SizeUTF8(line)
@@ -59,6 +60,16 @@ func (T *TextWidget) Draw() {
 		}
 	}
 
+	// TODO: global mode
+	line = "[tasks]"
+	lw, _, _ := T.Fonts["default"].SizeUTF8(line)
+	r = sdl.Rect{int32(w) - T.Padding.Left - int32(lw), int32(h-4) - int32(T.LineHeight), int32(lw), int32(T.LineHeight)}
+	T.DrawColoredText(line,
+		&r, "highlight", "default",
+		[]HighlightRule{
+			HighlightRule{1, 5, "accent"},
+		},
+	)
 	T.Renderer.Clear()
 	T.Renderer.Present()
 }
@@ -92,6 +103,7 @@ func run() int {
 	var event sdl.Event
 	running := true
 	for running {
+		// TODO: move handlers to mode obj
 		for event = sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch t := event.(type) {
 			case *sdl.WindowEvent:
@@ -106,6 +118,7 @@ func run() int {
 				fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%s\tmodifiers:%d\tstate:%d\trepeat:%d\n",
 					t.Timestamp, t.Type, sdl.GetScancodeName(t.Keysym.Scancode), t.Keysym.Mod, t.State, t.Repeat)
 				key := sdl.GetScancodeName(t.Keysym.Scancode)
+				// TODO: add cursor to TW
 				if (key == "N" && t.Keysym.Mod == 64) || key == "Down" {
 					if SELECTED < len(CLIENTS)-1 {
 						SELECTED++
