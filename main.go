@@ -16,16 +16,70 @@ import (
 
 var SELECTED int
 var CLIENTS []Client
-var w int
-var h int
 var fontSize int
 var X *xgbutil.XUtil
 var font *ttf.Font
 var bold *ttf.Font
 var SHADOW xproto.Window
 
-func DrawText(parent *sdl.Surface, text string, rect *sdl.Rect, color sdl.Color, font *ttf.Font) {
-	log.Println(text)
+type Geometry struct {
+	Width  int32
+	Height int32
+}
+
+type Padding struct {
+	Top  int32
+	Left int32
+}
+
+type TextWidget struct {
+	Renderer   *sdl.Renderer
+	Surface    *sdl.Surface
+	Fonts      map[string]*ttf.Font
+	Colors     map[string]sdl.Color
+	BG         uint32
+	LineHeight int
+	Geometry
+	Padding
+}
+
+var TW *TextWidget
+
+func NewTextWidget(renderer *sdl.Renderer, surface *sdl.Surface) *TextWidget {
+	widget := new(TextWidget)
+	widget.Renderer = renderer
+	widget.Surface = surface
+	widget.Fonts = make(map[string]*ttf.Font)
+	widget.Colors = make(map[string]sdl.Color)
+
+	widget.Colors["foreground"] = sdl.Color{220, 220, 220, 1}
+	widget.Colors["highlight"] = sdl.Color{255, 255, 255, 1}
+	widget.Colors["accent"] = sdl.Color{35, 157, 200, 1}
+	widget.Colors["gray"] = sdl.Color{100, 100, 100, 1}
+	widget.Colors["orange"] = sdl.Color{242, 155, 23, 1}
+
+	dir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	font, _ = ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Regular.ttf"), fontSize)
+	bold, _ = ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Bold.ttf"), fontSize)
+	widget.Fonts["default"] = font
+	widget.Fonts["bold"] = bold
+
+	widget.BG = 0xff252525
+	widget.LineHeight = fontSize + 6
+	widget.Padding = Padding{10, 10}
+	return widget
+}
+
+func (T *TextWidget) DrawText(text string, rect *sdl.Rect, colorName string, fontName string) {
+	// log.Println(text)
+	font, ok := T.Fonts[fontName]
+	if !ok {
+		font = T.Fonts["default"]
+	}
+	color, ok := T.Colors[colorName]
+	if !ok {
+		color = T.Colors["foreground"]
+	}
 	message, err := font.RenderUTF8_Blended(text, color)
 	if err != nil {
 		log.Fatal(err)
@@ -33,47 +87,82 @@ func DrawText(parent *sdl.Surface, text string, rect *sdl.Rect, color sdl.Color,
 	defer message.Free()
 	srcRect := sdl.Rect{}
 	message.GetClipRect(&srcRect)
-	message.Blit(&srcRect, parent, rect)
+	message.Blit(&srcRect, T.Surface, rect)
 }
 
-func Draw(renderer *sdl.Renderer, surface *sdl.Surface) {
-	log.Println(CLIENTS)
+type HighlightRule struct {
+	Start int
+	Len   int
+	Color string
+}
+
+func (T *TextWidget) DrawColoredText(text string, rect *sdl.Rect, colorName string, fontName string, rules []HighlightRule) {
+	if len(rules) == 0 {
+		T.DrawText(text, rect, colorName, fontName)
+	} else {
+		var token string
+		for i := range rules {
+			token = text[:rules[i].Start]
+			// log.Println(token)
+			var tw int
+			if len(token) > 0 {
+				T.DrawText(token, rect, colorName, fontName)
+				tw, _, _ = T.Fonts[fontName].SizeUTF8(token)
+				rect = &sdl.Rect{rect.X + int32(tw), rect.Y, rect.W - int32(tw), rect.H}
+			}
+			text = text[rules[i].Start:]
+			token = text[:rules[i].Len]
+			// log.Println(token)
+			T.DrawText(token, rect, rules[i].Color, fontName)
+			tw, _, _ = T.Fonts[fontName].SizeUTF8(token)
+			rect = &sdl.Rect{rect.X + int32(tw), rect.Y, rect.W - int32(tw), rect.H}
+			text = text[rules[i].Len:]
+		}
+		if len(token) > 0 {
+			T.DrawText(text, rect, colorName, fontName)
+		}
+	}
+}
+
+func (T *TextWidget) Draw() {
+	// log.Println(CLIENTS)
+	w := T.Geometry.Width
+	h := T.Geometry.Height
 	rect := sdl.Rect{0, 0, int32(w), int32(h)}
-	surface.FillRect(&rect, 0xff252525)
+	T.Surface.FillRect(&rect, T.BG)
 	var r sdl.Rect
-	f := font
 	for i, client := range CLIENTS {
 		if SELECTED != i {
-			f = font
-			r = sdl.Rect{10, int32(10 + (i * (fontSize + 6))), int32(w), int32(h)}
-			DrawText(surface, fmt.Sprintf("  %d [%d] %s", i, client.Desktop, client.Name), &r, sdl.Color{200, 200, 200, 1}, f)
+			r = sdl.Rect{T.Padding.Left, T.Padding.Top + int32(i*T.LineHeight), int32(w), int32(h)}
+			T.DrawColoredText(fmt.Sprintf("  %d [%d] %s", i, client.Desktop, client.Name),
+				&r, "foreground", "default",
+				[]HighlightRule{
+					HighlightRule{5, 1, "orange"},
+				},
+			)
 		} else {
-			f = bold
-			r = sdl.Rect{10, int32(10 + (i * (fontSize + 6))), 10, int32(h)}
-			DrawText(surface, fmt.Sprintf("| "), &r, sdl.Color{35, 157, 200, 1}, f)
-			r = sdl.Rect{10 + 14, int32(10 + (i * (fontSize + 6))), int32(w - 10), int32(h)}
-			DrawText(surface, fmt.Sprintf("%d [%d] %s", i, client.Desktop, client.Name), &r, sdl.Color{255, 255, 255, 1}, f)
+			r = sdl.Rect{T.Padding.Left, T.Padding.Top + int32(i*T.LineHeight), int32(w) - T.Padding.Left, int32(h)}
+			T.DrawColoredText(fmt.Sprintf("| %d [%d] %s", i, client.Desktop, client.Name),
+				&r, "highlight", "bold",
+				[]HighlightRule{
+					HighlightRule{0, 1, "accent"},
+				},
+			)
 		}
 	}
 
-	// tx, err := renderer.CreateTextureFromSurface(message)
-	// log.Println(tx, err)
-	renderer.Clear()
-	renderer.Present()
+	T.Renderer.Clear()
+	T.Renderer.Present()
 }
 
 func run() int {
 	CLIENTS = GetClients()
 	sdl.Init(sdl.INIT_EVERYTHING)
 	ttf.Init()
-	w = 500
-	fontSize = 14
-	h = (fontSize + 10) * len(CLIENTS)
 
-	dir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
-	log.Println(dir)
-	font, _ = ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Regular.ttf"), fontSize)
-	bold, _ = ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Bold.ttf"), fontSize)
+	fontSize = 14
+	w := 500
+	h := (fontSize + 10) * len(CLIENTS)
 	window, err := sdl.CreateWindow("Shadow", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
 		w, h, sdl.WINDOW_SHOWN)
 	if err != nil {
@@ -85,8 +174,9 @@ func run() int {
 	if err != nil {
 		panic(err)
 	}
-
-	Draw(renderer, surface)
+	TW = NewTextWidget(renderer, surface)
+	TW.Geometry = Geometry{int32(w), int32(h)}
+	TW.Draw()
 
 	sdl.Delay(5)
 	window.UpdateSurface()
@@ -99,7 +189,7 @@ func run() int {
 			case *sdl.WindowEvent:
 				if t.Event == sdl.WINDOWEVENT_FOCUS_GAINED {
 					CLIENTS = GetClients()
-					Draw(renderer, surface)
+					TW.Draw()
 					window.UpdateSurface()
 				}
 			case *sdl.QuitEvent:
@@ -114,7 +204,7 @@ func run() int {
 					} else {
 						SELECTED = 0
 					}
-					Draw(renderer, surface)
+					TW.Draw()
 					window.UpdateSurface()
 				}
 				if (key == "P" && t.Keysym.Mod == 64) || key == "Up" {
@@ -123,7 +213,7 @@ func run() int {
 					} else {
 						SELECTED = len(CLIENTS) - 1
 					}
-					Draw(renderer, surface)
+					TW.Draw()
 					window.UpdateSurface()
 				}
 				if key == "X" && t.Keysym.Mod == 64 {
@@ -132,7 +222,7 @@ func run() int {
 					// time.Sleep(1 * time.Second)
 					sdl.Delay(1000)
 					CLIENTS = GetClients()
-					Draw(renderer, surface)
+					TW.Draw()
 					window.UpdateSurface()
 				}
 				if (key == "J" && t.Keysym.Mod == 64) || key == "Return" {
@@ -202,6 +292,16 @@ func main() {
 		// defer file.Close()
 	} else {
 		os.Create(lockPath)
+		// conn, err := dbus.SessionBus()
+		// if err != nil {
+		// 	fmt.Fprintln(os.Stderr, "Failed to connect to session bus:", err)
+		// 	os.Exit(1)
+		// }
+		// var s []string
+		// log.Println(conn.Object("org.kde.konsole", "/Sessions/4").Call(
+		// 	"org.kde.konsole.Session.title", 2, "1").Store(&s))
+		//
+		// fmt.Println(s)
 		os.Exit(run())
 	}
 }
