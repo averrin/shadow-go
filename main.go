@@ -21,18 +21,25 @@ var X *xgbutil.XUtil
 
 var SHADOW xproto.Window
 
-func (T *TextWidget) Draw() {
+func (app *Application) DrawTasks() {
 	// log.Println(CLIENTS)
+	T := app.Widget
 	T.Clear()
 	w := T.Geometry.Width
 	h := T.Geometry.Height
 	var r sdl.Rect
 	var line string
+	var n string
 	for i, client := range CLIENTS {
+		if i < 10 {
+			n = fmt.Sprintf("%d", i)
+		} else {
+			n = " "
+		}
 		if SELECTED != i {
 			r = sdl.Rect{T.Padding.Left, T.Padding.Top + int32(i*T.LineHeight), int32(w), int32(h)}
 			// TODO: move strip line into T method
-			line = fmt.Sprintf("  %d [%d] %s", i, client.Desktop, client.Name)
+			line = fmt.Sprintf("  %s [%d] %s", n, client.Desktop, client.Name)
 			lw, _, _ := T.Fonts["default"].SizeUTF8(line)
 			for int32(lw) > (int32(w) - T.Padding.Left*2) {
 				line = line[:len(line)-4] + "…"
@@ -46,7 +53,7 @@ func (T *TextWidget) Draw() {
 			)
 		} else {
 			r = sdl.Rect{T.Padding.Left, T.Padding.Top + int32(i*T.LineHeight), int32(w) - T.Padding.Left, int32(h)}
-			line = fmt.Sprintf("| %d [%d] %s", i, client.Desktop, client.Name)
+			line = fmt.Sprintf("| %s [%d] %s", n, client.Desktop, client.Name)
 			lw, _, _ := T.Fonts["bold"].SizeUTF8(line)
 			for int32(lw) > (int32(w) - T.Padding.Left*2) {
 				line = line[:len(line)-4] + "…"
@@ -61,25 +68,32 @@ func (T *TextWidget) Draw() {
 		}
 	}
 
-	// TODO: global mode
-	line = "[tasks]"
+	app.DrawMode()
+	T.Renderer.Clear()
+	T.Renderer.Present()
+}
+
+func (app *Application) DrawMode() {
+	T := app.Widget
+	w := T.Geometry.Width
+	h := T.Geometry.Height
+	line := fmt.Sprintf("[%s]", app.Mode)
 	lw, _, _ := T.Fonts["default"].SizeUTF8(line)
-	r = sdl.Rect{int32(w) - T.Padding.Left - int32(lw), int32(h-4) - int32(T.LineHeight), int32(lw), int32(T.LineHeight)}
+	r := sdl.Rect{int32(w) - T.Padding.Left - int32(lw), int32(h-4) - int32(T.LineHeight), int32(lw), int32(T.LineHeight)}
 	T.DrawColoredText(line,
 		&r, "highlight", "default",
 		[]HighlightRule{
 			HighlightRule{1, 5, "accent"},
 		},
 	)
-	T.Renderer.Clear()
-	T.Renderer.Present()
 }
 
 type Application struct {
-	Mode string
+	Mode   string
+	Widget *TextWidget
 }
 
-func (a *Application) run() int {
+func (app *Application) run() int {
 	CLIENTS = GetClients()
 	sdl.Init(sdl.INIT_EVERYTHING)
 	ttf.Init()
@@ -98,9 +112,9 @@ func (a *Application) run() int {
 	if err != nil {
 		panic(err)
 	}
-	TW = NewTextWidget(renderer, surface)
-	TW.Geometry = Geometry{int32(w), int32(h)}
-	TW.Draw()
+	app.Widget = NewTextWidget(renderer, surface)
+	app.Widget.Geometry = Geometry{int32(w), int32(h)}
+	app.DrawTasks()
 
 	sdl.Delay(5)
 	window.UpdateSurface()
@@ -114,7 +128,7 @@ func (a *Application) run() int {
 			case *sdl.WindowEvent:
 				if t.Event == sdl.WINDOWEVENT_FOCUS_GAINED {
 					CLIENTS = GetClients()
-					TW.Draw()
+					app.DrawTasks()
 					window.UpdateSurface()
 				}
 			case *sdl.QuitEvent:
@@ -130,7 +144,7 @@ func (a *Application) run() int {
 					} else {
 						SELECTED = 0
 					}
-					TW.Draw()
+					app.DrawTasks()
 					window.UpdateSurface()
 				}
 				if (key == "P" && t.Keysym.Mod == 64) || key == "Up" {
@@ -139,7 +153,7 @@ func (a *Application) run() int {
 					} else {
 						SELECTED = len(CLIENTS) - 1
 					}
-					TW.Draw()
+					app.DrawTasks()
 					window.UpdateSurface()
 				}
 				if key == "X" && t.Keysym.Mod == 64 {
@@ -148,7 +162,7 @@ func (a *Application) run() int {
 					// time.Sleep(1 * time.Second)
 					sdl.Delay(1000)
 					CLIENTS = GetClients()
-					TW.Draw()
+					app.DrawTasks()
 					window.UpdateSurface()
 				}
 				if (key == "J" && t.Keysym.Mod == 64) || key == "Return" {

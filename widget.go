@@ -31,8 +31,6 @@ type TextWidget struct {
 	Padding
 }
 
-var TW *TextWidget
-
 func NewTextWidget(renderer *sdl.Renderer, surface *sdl.Surface) *TextWidget {
 	widget := new(TextWidget)
 	widget.Renderer = renderer
@@ -50,10 +48,6 @@ func NewTextWidget(renderer *sdl.Renderer, surface *sdl.Surface) *TextWidget {
 	dir := filepath.Join(cwd, "fonts")
 	font, _ := ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Regular.ttf"), fontSize)
 	bold, _ := ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Bold.ttf"), fontSize)
-	// font, _ := ttf.OpenFont(path.Join(dir, "UbuntuMono-R.ttf"), fontSize)
-	// bold, _ := ttf.OpenFont(path.Join(dir, "UbuntuMono-B.ttf"), fontSize)
-	// font, _ = ttf.OpenFont(path.Join(dir, "Inconsolata+Awesome.ttf"), fontSize)
-	// bold.SetStyle(ttf.STYLE_BOLD)
 	widget.Fonts["default"] = font
 	widget.Fonts["bold"] = bold
 
