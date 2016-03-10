@@ -17,8 +17,9 @@ type Geometry struct {
 }
 
 type Padding struct {
-	Top  int32
-	Left int32
+	Top   int32
+	Left  int32
+	Right int32
 }
 
 type TextWidget struct {
@@ -45,7 +46,7 @@ func NewTextWidget(renderer *sdl.Renderer, surface *sdl.Surface) *TextWidget {
 	widget.Colors["gray"] = sdl.Color{100, 100, 100, 1}
 	widget.Colors["orange"] = sdl.Color{242, 155, 23, 1}
 	widget.Colors["red"] = sdl.Color{215, 46, 46, 1}
-	widget.Colors["green"] = sdl.Color{92, 173, 95, 1}
+	widget.Colors["green"] = sdl.Color{110, 173, 110, 1}
 
 	cwd, _ := filepath.Abs(filepath.Dir(os.Args[0]))
 	dir := filepath.Join(cwd, "fonts")
@@ -56,7 +57,7 @@ func NewTextWidget(renderer *sdl.Renderer, surface *sdl.Surface) *TextWidget {
 
 	widget.BG = 0xff202020
 	widget.LineHeight = fontSize + 6
-	widget.Padding = Padding{10, 10}
+	widget.Padding = Padding{10, 10, 10}
 	return widget
 }
 

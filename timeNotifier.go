@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"time"
 
 	"github.com/veandco/go-sdl2/sdl"
 )
@@ -19,7 +22,7 @@ func (sw *TNotifier) Init() {
 	window := sw.App.Window
 	fontSize = 14
 	w := 500
-	h := (fontSize + 10) * 15
+	h := (fontSize + 10) * 12
 	window, err := sdl.CreateWindow("Shadow", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
 		w, h, sdl.WINDOW_SHOWN)
 	if err != nil {
@@ -61,6 +64,12 @@ func (sw *TNotifier) Draw() {
 		T.Renderer.Present()
 		sdl.Delay(5)
 		sw.App.Window.UpdateSurface()
+
+		go func() {
+			time.Sleep(5 * time.Second)
+			log.Println(os.Remove("/tmp/shadow.lock"))
+			os.Exit(0)
+		}()
 	}
 }
 
@@ -73,6 +82,9 @@ func (sw *TNotifier) Run() int {
 		case *sdl.WindowEvent:
 			if t.Event == sdl.WINDOWEVENT_FOCUS_GAINED {
 				// sw.Draw()
+			}
+			if t.Event == sdl.WINDOWEVENT_FOCUS_LOST {
+				// return 0
 			}
 		case *sdl.QuitEvent:
 			return 0

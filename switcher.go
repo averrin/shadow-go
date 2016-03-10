@@ -129,6 +129,9 @@ func (sw *Switcher) Run() int {
 				CLIENTS = GetClients()
 				sw.Draw()
 			}
+			if t.Event == sdl.WINDOWEVENT_FOCUS_LOST {
+				ewmh.ActiveWindowReq(X, SHADOW)
+			}
 		case *sdl.QuitEvent:
 			return 0
 		case *sdl.KeyDownEvent:

@@ -27,7 +27,7 @@ func (app *Application) DrawMode() {
 	h := T.Geometry.Height
 	line := fmt.Sprintf("[%s]", app.Mode)
 	lw, _, _ := T.Fonts["default"].SizeUTF8(line)
-	r := sdl.Rect{int32(w) - T.Padding.Left - int32(lw), int32(h-4) - int32(T.LineHeight), int32(lw), int32(T.LineHeight)}
+	r := sdl.Rect{int32(w) - T.Padding.Right - int32(lw), int32(h-4) - int32(T.LineHeight), int32(lw), int32(T.LineHeight)}
 	T.DrawColoredText(line,
 		&r, "highlight", "default",
 		[]HighlightRule{
