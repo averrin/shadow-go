@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/sdl_ttf"
@@ -38,11 +39,13 @@ func NewTextWidget(renderer *sdl.Renderer, surface *sdl.Surface) *TextWidget {
 	widget.Fonts = make(map[string]*ttf.Font)
 	widget.Colors = make(map[string]sdl.Color)
 
-	widget.Colors["foreground"] = sdl.Color{220, 220, 220, 1}
+	widget.Colors["foreground"] = sdl.Color{200, 200, 200, 1}
 	widget.Colors["highlight"] = sdl.Color{255, 255, 255, 1}
 	widget.Colors["accent"] = sdl.Color{35, 157, 200, 1}
 	widget.Colors["gray"] = sdl.Color{100, 100, 100, 1}
 	widget.Colors["orange"] = sdl.Color{242, 155, 23, 1}
+	widget.Colors["red"] = sdl.Color{215, 46, 46, 1}
+	widget.Colors["green"] = sdl.Color{92, 173, 95, 1}
 
 	cwd, _ := filepath.Abs(filepath.Dir(os.Args[0]))
 	dir := filepath.Join(cwd, "fonts")
@@ -57,6 +60,16 @@ func NewTextWidget(renderer *sdl.Renderer, surface *sdl.Surface) *TextWidget {
 	return widget
 }
 
+func (T *TextWidget) StripLine(line string, fontname string) string {
+	w := T.Geometry.Width
+	lw, _, _ := T.Fonts[fontname].SizeUTF8(line)
+	for int32(lw) > (int32(w) - T.Padding.Left*2) {
+		line = strings.TrimRight(line[:len(line)-4], " -") + "…"
+		lw, _, _ = T.Fonts[fontname].SizeUTF8(line)
+	}
+	return line
+}
+
 func (T *TextWidget) Clear() {
 	w := T.Geometry.Width
 	h := T.Geometry.Height
@@ -65,7 +78,9 @@ func (T *TextWidget) Clear() {
 }
 
 func (T *TextWidget) DrawText(text string, rect *sdl.Rect, colorName string, fontName string) {
-	// log.Println(text)
+	if strings.TrimSpace(text) == "" {
+		return
+	}
 	font, ok := T.Fonts[fontName]
 	if !ok {
 		font = T.Fonts["default"]
@@ -105,12 +120,14 @@ func (T *TextWidget) DrawColoredText(text string, rect *sdl.Rect, colorName stri
 				rect = &sdl.Rect{rect.X + int32(tw), rect.Y, rect.W - int32(tw), rect.H}
 			}
 			text = text[rules[i].Start:]
+			// log.Println(text, rules[i].Len)
 			token = text[:rules[i].Len]
 			// log.Println(token)
 			T.DrawText(token, rect, rules[i].Color, fontName)
 			tw, _, _ = T.Fonts[fontName].SizeUTF8(token)
 			rect = &sdl.Rect{rect.X + int32(tw), rect.Y, rect.W - int32(tw), rect.H}
 			text = text[rules[i].Len:]
+			// log.Println(text)
 		}
 		if len(token) > 0 {
 			T.DrawText(text, rect, colorName, fontName)
