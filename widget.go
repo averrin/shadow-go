@@ -42,9 +42,9 @@ func NewTextWidget(renderer *sdl.Renderer, surface *sdl.Surface) *TextWidget {
 
 	widget.Colors["foreground"] = sdl.Color{200, 200, 200, 1}
 	widget.Colors["highlight"] = sdl.Color{255, 255, 255, 1}
-	widget.Colors["accent"] = sdl.Color{35, 157, 200, 1}
+	widget.Colors["accent"] = sdl.Color{129, 162, 190, 1}
 	widget.Colors["gray"] = sdl.Color{100, 100, 100, 1}
-	widget.Colors["orange"] = sdl.Color{242, 155, 23, 1}
+	widget.Colors["orange"] = sdl.Color{240, 198, 116, 1}
 	widget.Colors["red"] = sdl.Color{215, 46, 46, 1}
 	widget.Colors["green"] = sdl.Color{110, 173, 110, 1}
 
@@ -55,7 +55,7 @@ func NewTextWidget(renderer *sdl.Renderer, surface *sdl.Surface) *TextWidget {
 	widget.Fonts["default"] = font
 	widget.Fonts["bold"] = bold
 
-	widget.BG = 0xff202020
+	widget.BG = 0xff242424
 	widget.LineHeight = fontSize + 6
 	widget.Padding = Padding{10, 10, 10}
 	return widget
