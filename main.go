@@ -31,9 +31,11 @@ func (app *Application) DrawMode() {
 	T.DrawColoredText(line,
 		&r, "highlight", "default",
 		[]HighlightRule{
-			HighlightRule{1, len(app.Mode), "accent"},
+			HighlightRule{1, len(app.Mode), "accent", "default"},
 		},
 	)
+	T.Renderer.Present()
+	T.App.Window.UpdateSurface()
 }
 
 type Application struct {
@@ -61,7 +63,7 @@ func (app *Application) run() int {
 	if err != nil {
 		panic(err)
 	}
-	app.Widget = NewTextWidget(renderer, surface)
+	app.Widget = NewTextWidget(app, renderer, surface)
 	w, h := app.Window.GetSize()
 	app.Widget.Geometry = Geometry{int32(w), int32(h)}
 	app.Modes[app.Mode].Draw()

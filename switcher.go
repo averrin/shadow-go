@@ -73,53 +73,50 @@ func (sw *Switcher) Init() {
 
 func (sw *Switcher) Draw() {
 	app := sw.App
-	// window := sw.App.Window
 	T := app.Widget
-	T.Clear()
-	w := T.Geometry.Width
-	h := T.Geometry.Height
-	var r sdl.Rect
+	T.Reset()
+	for i, client := range CLIENTS {
+		T.AddLine(sw.GetLine(i, client, SELECTED == i))
+	}
+	T.App.DrawMode()
+}
+
+func (sw *Switcher) GetLine(i int, client Client, focused bool) Line {
+	app := sw.App
+	T := app.Widget
 	var line string
 	var n string
-	for i, client := range CLIENTS {
-		if i < 10 {
-			n = fmt.Sprintf("%d", i)
-		} else {
-			n = " "
+	var ret Line
+	if i < 10 {
+		n = fmt.Sprintf("%d", i)
+	} else {
+		n = " "
+	}
+	if !focused {
+		line = fmt.Sprintf("  %s [%d] %s", n, client.Desktop, client.Name)
+		line = T.StripLine(line, "default")
+		ret = Line{
+			line,
+			[]HighlightRule{
+				HighlightRule{5, 1, "orange", "default"},
+			},
 		}
-		if SELECTED != i {
-			r = sdl.Rect{T.Padding.Left, T.Padding.Top + int32(i*T.LineHeight), int32(w), int32(h)}
-			// TODO: move strip line into T method
-			line = fmt.Sprintf("  %s [%d] %s", n, client.Desktop, client.Name)
-			line = T.StripLine(line, "default")
-			T.DrawColoredText(line,
-				&r, "foreground", "default",
-				[]HighlightRule{
-					HighlightRule{5, 1, "orange"},
-				},
-			)
-		} else {
-			r = sdl.Rect{T.Padding.Left, T.Padding.Top + int32(i*T.LineHeight), int32(w) - T.Padding.Left, int32(h)}
-			line = fmt.Sprintf("| %s [%d] %s", n, client.Desktop, client.Name)
-			line = T.StripLine(line, "bold")
-			T.DrawColoredText(line,
-				&r, "highlight", "bold",
-				[]HighlightRule{
-					HighlightRule{0, 1, "accent"},
-				},
-			)
+	} else {
+		line = fmt.Sprintf("| %s [%d] %s", n, client.Desktop, client.Name)
+		line = T.StripLine(line, "bold")
+		ret = Line{line,
+			[]HighlightRule{
+				HighlightRule{0, 1, "accent", "default"},
+				HighlightRule{1, len(line) - 2, "highlight", "bold"},
+			},
 		}
 	}
-
-	app.DrawMode()
-	T.Renderer.Clear()
-	T.Renderer.Present()
-	sdl.Delay(5)
-	sw.App.Window.UpdateSurface()
+	return ret
 }
 
 func (sw *Switcher) Run() int {
-	// app := sw.App
+	app := sw.App
+	T := app.Widget
 	// window := sw.App.Window
 	var event sdl.Event
 	for event = sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
@@ -138,28 +135,28 @@ func (sw *Switcher) Run() int {
 			fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%s\tmodifiers:%d\tstate:%d\trepeat:%d\n",
 				t.Timestamp, t.Type, sdl.GetScancodeName(t.Keysym.Scancode), t.Keysym.Mod, t.State, t.Repeat)
 			key := sdl.GetScancodeName(t.Keysym.Scancode)
-			// TODO: add cursor to TW
 			if (key == "N" && t.Keysym.Mod == 64) || key == "Down" {
+				T.SetLine(SELECTED, sw.GetLine(SELECTED, CLIENTS[SELECTED], false))
 				if SELECTED < len(CLIENTS)-1 {
 					SELECTED++
 				} else {
 					SELECTED = 0
 				}
-				sw.Draw()
+				T.SetLine(SELECTED, sw.GetLine(SELECTED, CLIENTS[SELECTED], true))
 			}
 			if (key == "P" && t.Keysym.Mod == 64) || key == "Up" {
+				T.SetLine(SELECTED, sw.GetLine(SELECTED, CLIENTS[SELECTED], false))
 				if SELECTED > 0 {
 					SELECTED--
 				} else {
 					SELECTED = len(CLIENTS) - 1
 				}
-				sw.Draw()
+				T.SetLine(SELECTED, sw.GetLine(SELECTED, CLIENTS[SELECTED], true))
 			}
 			if key == "X" && t.Keysym.Mod == 64 {
 				wid := CLIENTS[SELECTED].WID
 				ewmh.CloseWindow(X, wid)
-				// time.Sleep(1 * time.Second)
-				sdl.Delay(1000)
+				sdl.Delay(500)
 				CLIENTS = GetClients()
 				sw.Draw()
 			}

@@ -22,23 +22,32 @@ type Padding struct {
 	Right int32
 }
 
+type Line struct {
+	Content string
+	Rules   []HighlightRule
+}
+
 type TextWidget struct {
+	App        *Application
 	Renderer   *sdl.Renderer
 	Surface    *sdl.Surface
 	Fonts      map[string]*ttf.Font
 	Colors     map[string]sdl.Color
 	BG         uint32
+	Content    []Line
 	LineHeight int
 	Geometry
 	Padding
 }
 
-func NewTextWidget(renderer *sdl.Renderer, surface *sdl.Surface) *TextWidget {
+func NewTextWidget(app *Application, renderer *sdl.Renderer, surface *sdl.Surface) *TextWidget {
 	widget := new(TextWidget)
+	widget.App = app
 	widget.Renderer = renderer
 	widget.Surface = surface
 	widget.Fonts = make(map[string]*ttf.Font)
 	widget.Colors = make(map[string]sdl.Color)
+	widget.Content = make([]Line, 0)
 
 	widget.Colors["foreground"] = sdl.Color{200, 200, 200, 1}
 	widget.Colors["highlight"] = sdl.Color{255, 255, 255, 1}
@@ -52,13 +61,80 @@ func NewTextWidget(renderer *sdl.Renderer, surface *sdl.Surface) *TextWidget {
 	dir := filepath.Join(cwd, "fonts")
 	font, _ := ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Regular.ttf"), fontSize)
 	bold, _ := ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Bold.ttf"), fontSize)
+	header, _ := ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Bold.ttf"), fontSize+4)
 	widget.Fonts["default"] = font
 	widget.Fonts["bold"] = bold
+	widget.Fonts["header"] = header
 
 	widget.BG = 0xff242424
 	widget.LineHeight = fontSize + 6
 	widget.Padding = Padding{10, 10, 10}
 	return widget
+}
+
+func (T *TextWidget) SetContent(content []Line) {
+	T.Content = content
+	T.Update()
+}
+
+func (T *TextWidget) SetLine(index int, line Line) {
+	w := T.Geometry.Width
+	// h := T.Geometry.Height
+	r := sdl.Rect{T.Padding.Left, T.Padding.Top + int32(index*T.LineHeight), int32(w), int32(T.LineHeight)}
+	T.Content[index] = line
+	T.Surface.FillRect(&r, T.BG)
+	T.DrawColoredText(line.Content,
+		&r, "foreground", "default",
+		line.Rules,
+	)
+	// T.Renderer.Clear()
+	T.Renderer.Present()
+	// sdl.Delay(1)
+	T.App.Window.UpdateSurface()
+}
+
+func (T *TextWidget) AddLine(line Line) {
+	w := T.Geometry.Width
+	h := T.Geometry.Height
+	r := sdl.Rect{T.Padding.Left, T.Padding.Top + int32(len(T.Content)*T.LineHeight), int32(w), int32(h)}
+	T.Content = append(T.Content, line)
+	T.DrawColoredText(line.Content,
+		&r, "foreground", "default",
+		line.Rules,
+	)
+	// T.Renderer.Clear()
+	T.Renderer.Present()
+	// sdl.Delay(1)
+	T.App.Window.UpdateSurface()
+}
+
+func (T *TextWidget) ClearContent() {
+	T.Content = []Line{}
+}
+
+func (T *TextWidget) Reset() {
+	T.ClearContent()
+	T.Clear()
+}
+
+func (T *TextWidget) Update() {
+	w := T.Geometry.Width
+	// h := T.Geometry.Height
+	var r sdl.Rect
+	T.Clear()
+	for i, line := range T.Content {
+		r = sdl.Rect{T.Padding.Left, T.Padding.Top + int32(i*T.LineHeight), int32(w), int32(T.LineHeight)}
+		T.DrawColoredText(line.Content,
+			&r, "foreground", "default",
+			line.Rules,
+		)
+	}
+
+	T.App.DrawMode()
+	T.Renderer.Clear()
+	T.Renderer.Present()
+	sdl.Delay(5)
+	T.App.Window.UpdateSurface()
 }
 
 func (T *TextWidget) StripLine(line string, fontname string) string {
@@ -104,6 +180,7 @@ type HighlightRule struct {
 	Start int
 	Len   int
 	Color string
+	Font  string
 }
 
 func (T *TextWidget) DrawColoredText(text string, rect *sdl.Rect, colorName string, fontName string, rules []HighlightRule) {
@@ -124,7 +201,7 @@ func (T *TextWidget) DrawColoredText(text string, rect *sdl.Rect, colorName stri
 			// log.Println(text, rules[i].Len)
 			token = text[:rules[i].Len]
 			// log.Println(token)
-			T.DrawText(token, rect, rules[i].Color, fontName)
+			T.DrawText(token, rect, rules[i].Color, rules[i].Font)
 			tw, _, _ = T.Fonts[fontName].SizeUTF8(token)
 			rect = &sdl.Rect{rect.X + int32(tw), rect.Y, rect.W - int32(tw), rect.H}
 			text = text[rules[i].Len:]
