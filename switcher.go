@@ -143,6 +143,7 @@ func (sw *Switcher) Run() int {
 					SELECTED = 0
 				}
 				T.SetLine(SELECTED, sw.GetLine(SELECTED, CLIENTS[SELECTED], true))
+				return 1
 			}
 			if (key == "P" && t.Keysym.Mod == 64) || key == "Up" {
 				T.SetLine(SELECTED, sw.GetLine(SELECTED, CLIENTS[SELECTED], false))
@@ -152,6 +153,7 @@ func (sw *Switcher) Run() int {
 					SELECTED = len(CLIENTS) - 1
 				}
 				T.SetLine(SELECTED, sw.GetLine(SELECTED, CLIENTS[SELECTED], true))
+				return 1
 			}
 			if key == "X" && t.Keysym.Mod == 64 {
 				wid := CLIENTS[SELECTED].WID
@@ -159,6 +161,7 @@ func (sw *Switcher) Run() int {
 				sdl.Delay(500)
 				CLIENTS = GetClients()
 				sw.Draw()
+				return 1
 			}
 			if (key == "J" && t.Keysym.Mod == 64) || key == "Return" {
 				wid := CLIENTS[SELECTED].WID

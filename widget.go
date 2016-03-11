@@ -27,6 +27,11 @@ type Line struct {
 	Rules   []HighlightRule
 }
 
+type Cursor struct {
+	Row    int
+	Column int
+}
+
 type TextWidget struct {
 	App        *Application
 	Renderer   *sdl.Renderer
@@ -38,6 +43,7 @@ type TextWidget struct {
 	LineHeight int
 	Geometry
 	Padding
+	Cursor
 }
 
 func NewTextWidget(app *Application, renderer *sdl.Renderer, surface *sdl.Surface) *TextWidget {
@@ -48,6 +54,7 @@ func NewTextWidget(app *Application, renderer *sdl.Renderer, surface *sdl.Surfac
 	widget.Fonts = make(map[string]*ttf.Font)
 	widget.Colors = make(map[string]sdl.Color)
 	widget.Content = make([]Line, 0)
+	widget.Cursor = Cursor{0, 0}
 
 	widget.Colors["foreground"] = sdl.Color{200, 200, 200, 1}
 	widget.Colors["highlight"] = sdl.Color{255, 255, 255, 1}
@@ -62,9 +69,11 @@ func NewTextWidget(app *Application, renderer *sdl.Renderer, surface *sdl.Surfac
 	font, _ := ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Regular.ttf"), fontSize)
 	bold, _ := ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Bold.ttf"), fontSize)
 	header, _ := ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Bold.ttf"), fontSize+4)
+	bigger, _ := ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Bold.ttf"), fontSize+2)
 	widget.Fonts["default"] = font
 	widget.Fonts["bold"] = bold
 	widget.Fonts["header"] = header
+	widget.Fonts["bigger"] = bigger
 
 	widget.BG = 0xff242424
 	widget.LineHeight = fontSize + 6
@@ -131,6 +140,7 @@ func (T *TextWidget) Update() {
 	}
 
 	T.App.DrawMode()
+	T.drawCursor()
 	T.Renderer.Clear()
 	T.Renderer.Present()
 	sdl.Delay(5)
@@ -173,6 +183,11 @@ func (T *TextWidget) DrawText(text string, rect *sdl.Rect, colorName string, fon
 	defer message.Free()
 	srcRect := sdl.Rect{}
 	message.GetClipRect(&srcRect)
+	if fontName != "default" {
+		_, h, _ := T.Fonts["default"].SizeUTF8("A")
+		_, h2, _ := font.SizeUTF8("A")
+		rect.Y -= int32((h2 - h) / 2)
+	}
 	message.Blit(&srcRect, T.Surface, rect)
 }
 
@@ -199,16 +214,99 @@ func (T *TextWidget) DrawColoredText(text string, rect *sdl.Rect, colorName stri
 			}
 			text = text[rules[i].Start:]
 			// log.Println(text, rules[i].Len)
-			token = text[:rules[i].Len]
+			l := rules[i].Len
+			if l > len(text) || l == -1 {
+				l = len(text)
+			}
+			token = text[:l]
 			// log.Println(token)
 			T.DrawText(token, rect, rules[i].Color, rules[i].Font)
 			tw, _, _ = T.Fonts[fontName].SizeUTF8(token)
 			rect = &sdl.Rect{rect.X + int32(tw), rect.Y, rect.W - int32(tw), rect.H}
-			text = text[rules[i].Len:]
+			text = text[l:]
 			// log.Println(text)
 		}
 		if len(token) > 0 {
 			T.DrawText(text, rect, colorName, fontName)
 		}
 	}
+}
+
+func (T *TextWidget) MoveCursor(r int, c int) (int, int) {
+	T.Cursor.Row = r
+	T.Cursor.Column = c
+	T.drawCursor()
+	return T.Cursor.Row, T.Cursor.Column
+}
+
+func (T *TextWidget) MoveCursorLeft() (int, int) {
+	T.MoveCursor(T.Cursor.Row, T.Cursor.Column-1)
+	return T.Cursor.Row, T.Cursor.Column
+}
+
+func (T *TextWidget) MoveCursorRight() (int, int) {
+	T.MoveCursor(T.Cursor.Row, T.Cursor.Column+1)
+	return T.Cursor.Row, T.Cursor.Column
+}
+
+func (T *TextWidget) MoveCursorUp() (int, int) {
+	T.MoveCursor(T.Cursor.Row-1, T.Cursor.Column)
+	return T.Cursor.Row, T.Cursor.Column
+}
+
+func (T *TextWidget) MoveCursorDown() (int, int) {
+	T.MoveCursor(T.Cursor.Row+1, T.Cursor.Column)
+	return T.Cursor.Row, T.Cursor.Column
+}
+
+func (T *TextWidget) addString(s string) (int, int) {
+	line := T.Content[T.Cursor.Row]
+	i := T.Cursor.Column
+	line.Content = line.Content[:i] + s + line.Content[i:]
+	T.SetLine(0, line)
+	T.MoveCursor(T.Cursor.Row, T.Cursor.Column+len(s))
+	return T.Cursor.Row, T.Cursor.Column
+}
+
+func (T *TextWidget) removeString(n int) (int, int) {
+	if T.Cursor.Column > 0 {
+		line := T.Content[T.Cursor.Row]
+		i := T.Cursor.Column
+		line.Content = line.Content[:i-n] + line.Content[i:]
+		T.SetLine(0, line)
+		T.MoveCursor(T.Cursor.Row, T.Cursor.Column-n)
+	}
+	return T.Cursor.Row, T.Cursor.Column
+}
+
+func (T *TextWidget) removeWord() (int, int) {
+	log.Println(T.Cursor.Column)
+	if T.Cursor.Column > 0 {
+		index := T.Cursor.Row
+		line := T.Content[index].Content[:T.Cursor.Column-1]
+		n := strings.LastIndexAny(line, " -;") + 1
+		return T.removeString(T.Cursor.Column - n)
+	}
+	return T.Cursor.Row, T.Cursor.Column
+}
+
+func (T *TextWidget) drawCursor() {
+	index := T.Cursor.Row
+	var lw int
+	if T.Cursor.Column > 0 {
+		line := T.Content[index].Content[:T.Cursor.Column-1]
+		lw, _, _ = T.Fonts["default"].SizeUTF8(line)
+	} else {
+		lw = -6
+	}
+	r := sdl.Rect{T.Padding.Left + int32(lw) + 6, T.Padding.Top + int32(index*T.LineHeight), int32(5), int32(T.LineHeight)}
+	T.DrawColoredText("|", &r, "accent", "default", []HighlightRule{})
+	T.Renderer.Present()
+	T.App.Window.UpdateSurface()
+}
+
+func (T *TextWidget) SetRules(index int, rules []HighlightRule) {
+	line := T.Content[index]
+	line.Rules = rules
+	T.SetLine(index, line)
 }

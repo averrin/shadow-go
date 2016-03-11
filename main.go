@@ -90,6 +90,10 @@ func NewApplication(mode string) *Application {
 	tn := new(TNotifier)
 	tn.SetApp(app)
 	app.Modes["time"] = tn
+
+	r := new(Runner)
+	r.SetApp(app)
+	app.Modes["runner"] = r
 	return app
 }
 
