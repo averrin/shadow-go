@@ -66,6 +66,7 @@ func (app *Application) run() int {
 	app.Widget = NewTextWidget(app, renderer, surface)
 	w, h := app.Window.GetSize()
 	app.Widget.Geometry = Geometry{int32(w), int32(h)}
+	app.Widget.FullClear()
 	app.Modes[app.Mode].Draw()
 
 	running := true

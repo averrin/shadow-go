@@ -147,6 +147,11 @@ func (T *TextWidget) Update() {
 	T.App.Window.UpdateSurface()
 }
 
+func (T *TextWidget) Show() {
+	T.Renderer.Present()
+	T.App.Window.UpdateSurface()
+}
+
 func (T *TextWidget) StripLine(line string, fontname string) string {
 	w := T.Geometry.Width
 	lw, _, _ := T.Fonts[fontname].SizeUTF8(line)
@@ -157,10 +162,17 @@ func (T *TextWidget) StripLine(line string, fontname string) string {
 	return line
 }
 
-func (T *TextWidget) Clear() {
+func (T *TextWidget) FullClear() {
 	w := T.Geometry.Width
 	h := T.Geometry.Height
 	rect := sdl.Rect{0, 0, int32(w), int32(h)}
+	T.Surface.FillRect(&rect, T.BG)
+}
+
+func (T *TextWidget) Clear() {
+	w := T.Geometry.Width - T.Padding.Left - T.Padding.Right + 3
+	h := T.Geometry.Height - T.Padding.Top
+	rect := sdl.Rect{T.Padding.Left - 3, T.Padding.Top, int32(w), int32(h)}
 	T.Surface.FillRect(&rect, T.BG)
 }
 
@@ -234,7 +246,10 @@ func (T *TextWidget) DrawColoredText(text string, rect *sdl.Rect, colorName stri
 
 func (T *TextWidget) MoveCursor(r int, c int) (int, int) {
 	T.Cursor.Row = r
-	T.Cursor.Column = c
+	line := T.Content[T.Cursor.Row]
+	if c >= 0 && c <= len(line.Content) {
+		T.Cursor.Column = c
+	}
 	T.drawCursor()
 	return T.Cursor.Row, T.Cursor.Column
 }
@@ -279,6 +294,21 @@ func (T *TextWidget) removeString(n int) (int, int) {
 	return T.Cursor.Row, T.Cursor.Column
 }
 
+func (T *TextWidget) removeStringForward(n int) (int, int) {
+	line := T.Content[T.Cursor.Row]
+	i := T.Cursor.Column
+	log.Println(i+n, i, len(line.Content))
+	if i+n > len(line.Content) {
+		n = len(line.Content) - i
+	}
+	if i > 0 {
+		line.Content = line.Content[:i] + line.Content[i+n:]
+		T.SetLine(0, line)
+		T.MoveCursor(T.Cursor.Row, T.Cursor.Column)
+	}
+	return T.Cursor.Row, T.Cursor.Column
+}
+
 func (T *TextWidget) removeWord() (int, int) {
 	log.Println(T.Cursor.Column)
 	if T.Cursor.Column > 0 {
@@ -297,10 +327,10 @@ func (T *TextWidget) drawCursor() {
 		line := T.Content[index].Content[:T.Cursor.Column-1]
 		lw, _, _ = T.Fonts["default"].SizeUTF8(line)
 	} else {
-		lw = -6
+		lw = -10
 	}
-	r := sdl.Rect{T.Padding.Left + int32(lw) + 6, T.Padding.Top + int32(index*T.LineHeight), int32(5), int32(T.LineHeight)}
-	T.DrawColoredText("|", &r, "accent", "default", []HighlightRule{})
+	r := sdl.Rect{T.Padding.Left + int32(lw) + 5, T.Padding.Top + int32(index*T.LineHeight), int32(5), int32(T.LineHeight)}
+	T.DrawColoredText("|", &r, "orange", "default", []HighlightRule{})
 	T.Renderer.Present()
 	T.App.Window.UpdateSurface()
 }

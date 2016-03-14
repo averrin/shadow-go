@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
+	// "log"
 	"os"
 	"os/exec"
 	"sort"
@@ -18,8 +18,8 @@ type Runner struct {
 	Items []string
 }
 
-func (sw *Runner) SetApp(app *Application) {
-	sw.App = app
+func (R *Runner) SetApp(app *Application) {
+	R.App = app
 }
 
 func getExec() []string {
@@ -34,9 +34,9 @@ func getExec() []string {
 	return ret
 }
 
-func (sw *Runner) Init() {
-	app := sw.App
-	window := sw.App.Window
+func (R *Runner) Init() {
+	app := R.App
+	window := R.App.Window
 	fontSize = 14
 	w := 500
 	h := (fontSize + 10) * 13
@@ -46,13 +46,13 @@ func (sw *Runner) Init() {
 		panic(err)
 	}
 	app.Window = window
-	sw.Items = getExec()
+	R.Items = getExec()
 }
 
-func (sw *Runner) Draw() {
+func (R *Runner) Draw() {
 	c := make(chan Line)
 	go GetTime(c)
-	app := sw.App
+	app := R.App
 	T := app.Widget
 	T.Padding.Left = 30
 	T.Reset()
@@ -61,7 +61,7 @@ func (sw *Runner) Draw() {
 	T.DrawColoredText(">", &r, "accent", "bold", []HighlightRule{})
 	T.AddLine(Line{"", []HighlightRule{}})
 	T.MoveCursor(0, 0)
-	for _, e := range sw.Items[:13] {
+	for _, e := range R.Items[:13] {
 		T.AddLine(Line{e, []HighlightRule{}})
 	}
 }
@@ -75,16 +75,16 @@ func isASCII(s string) bool {
 	return true
 }
 
-func (sw *Runner) Run() int {
-	app := sw.App
+func (R *Runner) Run() int {
+	app := R.App
 	T := app.Widget
-	// window := sw.App.Window
+	// window := R.App.Window
 	var event sdl.Event
 	for event = sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 		switch t := event.(type) {
 		case *sdl.WindowEvent:
 			if t.Event == sdl.WINDOWEVENT_FOCUS_GAINED {
-				// sw.Draw()
+				// R.Draw()
 			}
 			if t.Event == sdl.WINDOWEVENT_FOCUS_LOST {
 				// return 0
@@ -101,7 +101,13 @@ func (sw *Runner) Run() int {
 			if (key == "H" && t.Keysym.Mod == 64) || key == "Backspace" {
 				T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
 				T.removeString(1)
-				sw.Update()
+				R.Update()
+				return 1
+			}
+			if key == "Delete" {
+				T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
+				T.removeStringForward(1)
+				R.Update()
 				return 1
 			}
 			if key == "C" && t.Keysym.Mod == 64 {
@@ -116,13 +122,27 @@ func (sw *Runner) Run() int {
 				s, _ := sdl.GetClipboardText()
 				T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
 				T.addString(s)
-				sw.Update()
+				R.Update()
 				return 1
 			}
 			if key == "W" && t.Keysym.Mod == 64 {
 				T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
 				T.removeWord()
-				sw.Update()
+				R.Update()
+				return 1
+			}
+			if key == "Left" {
+				T.MoveCursorLeft()
+				R.Update()
+				return 1
+			}
+			if key == "Right" {
+				T.MoveCursorRight()
+				R.Update()
+				return 1
+			}
+			if key == "Tab" {
+				R.Autocomplete()
 				return 1
 			}
 			if (key == "J" && t.Keysym.Mod == 64) || key == "Return" {
@@ -133,10 +153,17 @@ func (sw *Runner) Run() int {
 				}
 				return ret
 			}
-			if isASCII(string(t.Keysym.Sym)) && t.Keysym.Mod == 0 {
+			if isASCII(string(t.Keysym.Sym)) && t.Keysym.Mod <= 1 {
 				T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
-				T.addString(fmt.Sprintf("%c", t.Keysym.Sym))
-				sw.Update()
+				char := string(t.Keysym.Sym)
+				if t.Keysym.Mod == 1 {
+					char = strings.ToUpper(char)
+					if char == "-" {
+						char = "_"
+					}
+				}
+				T.addString(char)
+				R.Update()
 				return 1
 			}
 		}
@@ -144,21 +171,33 @@ func (sw *Runner) Run() int {
 	return 1
 }
 
+func (R *Runner) Autocomplete() {
+	T := R.App.Widget
+	line := strings.Split(T.Content[0].Content, " ")[0]
+	items := fuzzy.RankFindFold(line, R.Items)
+	sort.Sort(items)
+	line = items[0].Target
+	T.SetLine(0, Line{line, []HighlightRule{HighlightRule{0, len(line), "green", "default"}}})
+	T.MoveCursor(0, len(line))
+	R.Update()
+}
+
 func (R *Runner) Update() {
 	T := R.App.Widget
-	line := T.Content[0]
-	items := fuzzy.RankFindFold(line.Content, R.Items)
+	line := strings.Split(T.Content[0].Content, " ")[0]
+	items := fuzzy.RankFindFold(line, R.Items)
 	sort.Sort(items)
-	log.Println(items)
 	end := 13
 	if end > len(items) {
 		end = len(items)
 	}
 	if len(items) == 1 {
-		T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "green", "default"}})
-		if line.Content != items[0].Target {
-			T.Content[0].Content = items[0].Target
-			T.MoveCursor(0, len(items[0].Target))
+		if line != items[0].Target {
+			// T.Content[0].Content = items[0].Target
+			// T.MoveCursor(0, len(items[0].Target))
+			T.SetRules(0, []HighlightRule{HighlightRule{0, len(line), "accent", "default"}})
+		} else {
+			T.SetRules(0, []HighlightRule{HighlightRule{0, len(line), "green", "default"}})
 		}
 	} else {
 		T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
@@ -167,7 +206,6 @@ func (R *Runner) Update() {
 	for _, item := range items[:end] {
 		newContent = append(newContent, Line{item.Target, []HighlightRule{}})
 	}
-	// T.Reset()
 	T.SetContent(newContent)
 }
 
