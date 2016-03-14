@@ -59,7 +59,7 @@ func NewTextWidget(app *Application, renderer *sdl.Renderer, surface *sdl.Surfac
 	widget.Colors["foreground"] = sdl.Color{200, 200, 200, 1}
 	widget.Colors["highlight"] = sdl.Color{255, 255, 255, 1}
 	widget.Colors["accent"] = sdl.Color{129, 162, 190, 1}
-	widget.Colors["gray"] = sdl.Color{100, 100, 100, 1}
+	widget.Colors["gray"] = sdl.Color{130, 130, 130, 1}
 	widget.Colors["orange"] = sdl.Color{240, 198, 116, 1}
 	widget.Colors["red"] = sdl.Color{215, 46, 46, 1}
 	widget.Colors["green"] = sdl.Color{110, 173, 110, 1}
@@ -172,7 +172,7 @@ func (T *TextWidget) FullClear() {
 func (T *TextWidget) Clear() {
 	w := T.Geometry.Width - T.Padding.Left - T.Padding.Right + 3
 	h := T.Geometry.Height - T.Padding.Top
-	rect := sdl.Rect{T.Padding.Left - 3, T.Padding.Top, int32(w), int32(h)}
+	rect := sdl.Rect{T.Padding.Left, T.Padding.Top, int32(w), int32(h)}
 	T.Surface.FillRect(&rect, T.BG)
 }
 
@@ -329,6 +329,8 @@ func (T *TextWidget) drawCursor() {
 	} else {
 		lw = -10
 	}
+	rect := sdl.Rect{T.Padding.Left - 3, T.Padding.Top, 3, int32(T.LineHeight)}
+	T.Surface.FillRect(&rect, T.BG)
 	r := sdl.Rect{T.Padding.Left + int32(lw) + 5, T.Padding.Top + int32(index*T.LineHeight), int32(5), int32(T.LineHeight)}
 	T.DrawColoredText("|", &r, "orange", "default", []HighlightRule{})
 	T.Renderer.Present()
