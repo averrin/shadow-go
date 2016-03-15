@@ -14,6 +14,7 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+//Runner mode
 type Runner struct {
 	App      *Application
 	Alias    string
@@ -22,11 +23,13 @@ type Runner struct {
 	Selected int
 }
 
+//SetApp interface method
 func (R *Runner) SetApp(app *Application) {
 	R.App = app
 	R.Alias = "\uf120"
 }
 
+//GetAlias interface method
 func (R *Runner) GetAlias() string {
 	return R.Alias
 }
@@ -43,6 +46,7 @@ func getExec() []string {
 	return ret
 }
 
+//Init interface method
 func (R *Runner) Init() WidgetSettings {
 	app := R.App
 	window := R.App.Window
@@ -60,6 +64,7 @@ func (R *Runner) Init() WidgetSettings {
 	return WidgetSettings{fontSize, Geometry{int32(w), int32(h)}, Padding{10, 30, 10}}
 }
 
+//Draw interface method
 func (R *Runner) Draw() {
 	c := make(chan Line)
 	go GetTime(c)
@@ -112,13 +117,13 @@ func (R *Runner) Run() int {
 			if (key == "H" && t.Keysym.Mod == 64) || key == "Backspace" {
 				T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
 				T.removeString(1)
-				R.Update()
+				R.update()
 				return 1
 			}
 			if key == "Delete" {
 				T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
 				T.removeStringForward(1)
-				R.Update()
+				R.update()
 				return 1
 			}
 			if key == "C" && t.Keysym.Mod == 64 {
@@ -133,39 +138,39 @@ func (R *Runner) Run() int {
 				s, _ := sdl.GetClipboardText()
 				T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
 				T.addString(s)
-				R.Update()
+				R.update()
 				return 1
 			}
 			if key == "W" && t.Keysym.Mod == 64 {
 				T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
 				T.removeWord()
-				R.Update()
+				R.update()
 				return 1
 			}
 			if key == "Left" {
 				T.MoveCursorLeft()
-				R.Update()
+				R.update()
 				return 1
 			}
 			if key == "Right" {
 				T.MoveCursorRight()
-				R.Update()
+				R.update()
 				return 1
 			}
 			if key == "Down" || (key == "N" && t.Keysym.Mod == 64) {
-				R.Next()
+				R.next()
 				return 1
 			}
 			if key == "Up" || (key == "P" && t.Keysym.Mod == 64) {
-				R.Prev()
+				R.prev()
 				return 1
 			}
 			if key == "Tab" {
-				R.Autocomplete()
+				R.autocomplete()
 				return 1
 			}
 			if (key == "J" && t.Keysym.Mod == 64) || key == "Return" {
-				ret := Exec(T.Content[0].Content)
+				ret := execCommand(T.Content[0].Content)
 				if ret != 0 {
 					T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "red", "default"}})
 					T.drawCursor()
@@ -182,7 +187,7 @@ func (R *Runner) Run() int {
 					}
 				}
 				T.addString(char)
-				R.Update()
+				R.update()
 				return 1
 			}
 		}
@@ -190,7 +195,7 @@ func (R *Runner) Run() int {
 	return 1
 }
 
-func (R *Runner) Next() {
+func (R *Runner) next() {
 	T := R.App.Widget
 	T.SetRules(R.Selected+1, []HighlightRule{HighlightRule{0, -1, "default", "default"}})
 	R.Selected++
@@ -202,7 +207,7 @@ func (R *Runner) Next() {
 	T.MoveCursor(0, len(R.Suggests[R.Selected]))
 }
 
-func (R *Runner) Prev() {
+func (R *Runner) prev() {
 	T := R.App.Widget
 	T.SetRules(R.Selected+1, []HighlightRule{HighlightRule{0, -1, "default", "default"}})
 	if R.Selected == 0 {
@@ -214,7 +219,7 @@ func (R *Runner) Prev() {
 	T.MoveCursor(0, len(R.Suggests[R.Selected]))
 }
 
-func (R *Runner) Autocomplete() {
+func (R *Runner) autocomplete() {
 	T := R.App.Widget
 	tokens := strings.Split(T.Content[0].Content, " ")
 	line := tokens[0]
@@ -227,11 +232,11 @@ func (R *Runner) Autocomplete() {
 		}
 		T.SetLine(0, Line{line, []HighlightRule{HighlightRule{0, len(line), "green", "default"}}})
 		T.MoveCursor(0, len(line))
-		R.Update()
+		R.update()
 	}
 }
 
-func (R *Runner) Update() {
+func (R *Runner) update() {
 	R.Selected = 0
 	T := R.App.Widget
 	line := strings.Split(T.Content[0].Content, " ")[0]
@@ -282,7 +287,7 @@ func (R *Runner) Update() {
 	T.SetRules(R.Selected+1, []HighlightRule{HighlightRule{0, -1, "highlight", "bold"}})
 }
 
-func Exec(cmd string) int {
+func execCommand(cmd string) int {
 	tokens := strings.Split(cmd, " ")
 	c := exec.Command(tokens[0], tokens[1:]...)
 	err := c.Start()

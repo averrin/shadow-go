@@ -9,23 +9,27 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+//TNotifier mode
 type TNotifier struct {
 	App   *Application
 	Alias string
 }
 
-func (sw *TNotifier) SetApp(app *Application) {
-	sw.App = app
-	sw.Alias = "\uf017"
+//SetApp interface method
+func (tn *TNotifier) SetApp(app *Application) {
+	tn.App = app
+	tn.Alias = "\uf017"
 }
 
-func (sw *TNotifier) GetAlias() string {
-	return sw.Alias
+//GetAlias interface method
+func (tn *TNotifier) GetAlias() string {
+	return tn.Alias
 }
 
-func (sw *TNotifier) Init() WidgetSettings {
-	app := sw.App
-	window := sw.App.Window
+//Init interface method
+func (tn *TNotifier) Init() WidgetSettings {
+	app := tn.App
+	window := tn.App.Window
 	fontSize = 14
 	w := 500
 	h := (fontSize + 10) * 13
@@ -35,15 +39,15 @@ func (sw *TNotifier) Init() WidgetSettings {
 		panic(err)
 	}
 	app.Window = window
-	return WidgetSettings{fontSize, Geometry{int32(w), int32(h)}, Padding{10, 10, 10}}
+	return WidgetSettings{fontSize, Geometry{int32(w), int32(h)}, Padding{10, 30, 10}}
 }
 
-func (sw *TNotifier) Draw() {
+//Draw interface method
+func (tn *TNotifier) Draw() {
 	c := make(chan Line)
 	go GetTime(c)
-	app := sw.App
+	app := tn.App
 	T := app.Widget
-	T.Padding.Left = 30
 	T.Reset()
 	T.App.DrawMode()
 	for {
@@ -60,15 +64,16 @@ func (sw *TNotifier) Draw() {
 	}()
 }
 
-func (sw *TNotifier) Run() int {
-	// app := sw.App
-	// window := sw.App.Window
+//Run interface method
+func (tn *TNotifier) Run() int {
+	// app := tn.App
+	// window := tn.App.Window
 	var event sdl.Event
 	for event = sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 		switch t := event.(type) {
 		case *sdl.WindowEvent:
 			if t.Event == sdl.WINDOWEVENT_FOCUS_GAINED {
-				// sw.Draw()
+				// tn.Draw()
 			}
 			if t.Event == sdl.WINDOWEVENT_FOCUS_LOST {
 				// return 0

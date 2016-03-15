@@ -10,6 +10,7 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+//Client struct
 type Client struct {
 	WID     xproto.Window
 	Name    string
@@ -17,6 +18,7 @@ type Client struct {
 	Active  bool
 }
 
+//GetClients get windows list
 func GetClients() []Client {
 	clients := []Client{}
 	var err error
@@ -48,20 +50,24 @@ func GetClients() []Client {
 
 }
 
+//Switcher mode
 type Switcher struct {
 	App   *Application
 	Alias string
 }
 
+//SetApp interface method
 func (sw *Switcher) SetApp(app *Application) {
 	sw.App = app
 	sw.Alias = "\uf248"
 }
 
+//GetAlias interface method
 func (sw *Switcher) GetAlias() string {
 	return sw.Alias
 }
 
+//Init interface method
 func (sw *Switcher) Init() WidgetSettings {
 	app := sw.App
 	window := sw.App.Window
@@ -78,17 +84,18 @@ func (sw *Switcher) Init() WidgetSettings {
 	return WidgetSettings{fontSize, Geometry{int32(w), int32(h)}, Padding{10, 10, 10}}
 }
 
+//Draw interface method
 func (sw *Switcher) Draw() {
 	app := sw.App
 	T := app.Widget
 	T.Reset()
 	for i, client := range CLIENTS {
-		T.AddLine(sw.GetLine(i, client, SELECTED == i))
+		T.AddLine(sw.getLine(i, client, SELECTED == i))
 	}
 	T.App.DrawMode()
 }
 
-func (sw *Switcher) GetLine(i int, client Client, focused bool) Line {
+func (sw *Switcher) getLine(i int, client Client, focused bool) Line {
 	app := sw.App
 	T := app.Widget
 	var line string
@@ -121,6 +128,7 @@ func (sw *Switcher) GetLine(i int, client Client, focused bool) Line {
 	return ret
 }
 
+//Run interface method
 func (sw *Switcher) Run() int {
 	app := sw.App
 	T := app.Widget
@@ -143,23 +151,23 @@ func (sw *Switcher) Run() int {
 				t.Timestamp, t.Type, sdl.GetScancodeName(t.Keysym.Scancode), t.Keysym.Mod, t.State, t.Repeat)
 			key := sdl.GetScancodeName(t.Keysym.Scancode)
 			if (key == "N" && t.Keysym.Mod == 64) || key == "Down" {
-				T.SetLine(SELECTED, sw.GetLine(SELECTED, CLIENTS[SELECTED], false))
+				T.SetLine(SELECTED, sw.getLine(SELECTED, CLIENTS[SELECTED], false))
 				if SELECTED < len(CLIENTS)-1 {
 					SELECTED++
 				} else {
 					SELECTED = 0
 				}
-				T.SetLine(SELECTED, sw.GetLine(SELECTED, CLIENTS[SELECTED], true))
+				T.SetLine(SELECTED, sw.getLine(SELECTED, CLIENTS[SELECTED], true))
 				return 1
 			}
 			if (key == "P" && t.Keysym.Mod == 64) || key == "Up" {
-				T.SetLine(SELECTED, sw.GetLine(SELECTED, CLIENTS[SELECTED], false))
+				T.SetLine(SELECTED, sw.getLine(SELECTED, CLIENTS[SELECTED], false))
 				if SELECTED > 0 {
 					SELECTED--
 				} else {
 					SELECTED = len(CLIENTS) - 1
 				}
-				T.SetLine(SELECTED, sw.GetLine(SELECTED, CLIENTS[SELECTED], true))
+				T.SetLine(SELECTED, sw.getLine(SELECTED, CLIENTS[SELECTED], true))
 				return 1
 			}
 			if key == "X" && t.Keysym.Mod == 64 {
