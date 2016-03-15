@@ -36,6 +36,7 @@ type TextWidget struct {
 	App        *Application
 	Renderer   *sdl.Renderer
 	Surface    *sdl.Surface
+	FontSize   int
 	Fonts      map[string]*ttf.Font
 	Colors     map[string]sdl.Color
 	BG         uint32
@@ -46,7 +47,13 @@ type TextWidget struct {
 	Cursor
 }
 
-func NewTextWidget(app *Application, renderer *sdl.Renderer, surface *sdl.Surface) *TextWidget {
+type WidgetSettings struct {
+	FontSize int
+	Geometry
+	Padding
+}
+
+func NewTextWidget(app *Application, renderer *sdl.Renderer, surface *sdl.Surface, settings WidgetSettings) *TextWidget {
 	widget := new(TextWidget)
 	widget.App = app
 	widget.Renderer = renderer
@@ -55,6 +62,7 @@ func NewTextWidget(app *Application, renderer *sdl.Renderer, surface *sdl.Surfac
 	widget.Colors = make(map[string]sdl.Color)
 	widget.Content = make([]Line, 0)
 	widget.Cursor = Cursor{0, 0}
+	widget.FontSize = settings.FontSize
 
 	widget.Colors["foreground"] = sdl.Color{200, 200, 200, 1}
 	widget.Colors["highlight"] = sdl.Color{255, 255, 255, 1}
@@ -66,18 +74,23 @@ func NewTextWidget(app *Application, renderer *sdl.Renderer, surface *sdl.Surfac
 
 	cwd, _ := filepath.Abs(filepath.Dir(os.Args[0]))
 	dir := filepath.Join(cwd, "fonts")
-	font, _ := ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Regular.ttf"), fontSize)
-	bold, _ := ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Bold.ttf"), fontSize)
-	header, _ := ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Bold.ttf"), fontSize+4)
-	bigger, _ := ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Bold.ttf"), fontSize+2)
+	// font, _ := ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Regular.ttf"), fontSize)
+	// bold, _ := ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Bold.ttf"), fontSize)
+	// header, _ := ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Bold.ttf"), fontSize+4)
+	// bigger, _ := ttf.OpenFont(path.Join(dir, "FantasqueSansMono-Bold.ttf"), fontSize+2)
+	font, _ := ttf.OpenFont(path.Join(dir, "Fantasque Sans Mono Regular Nerd Font Plus Font Awesome Plus Octicons Plus Pomicons.ttf"), widget.FontSize)
+	bold, _ := ttf.OpenFont(path.Join(dir, "Fantasque Sans Mono Bold Nerd Font Plus Font Awesome Plus Octicons Plus Pomicons.ttf"), widget.FontSize)
+	header, _ := ttf.OpenFont(path.Join(dir, "Fantasque Sans Mono Bold Nerd Font Plus Font Awesome Plus Octicons Plus Pomicons.ttf"), widget.FontSize+4)
+	bigger, _ := ttf.OpenFont(path.Join(dir, "Fantasque Sans Mono Bold Nerd Font Plus Font Awesome Plus Octicons Plus Pomicons.ttf"), widget.FontSize+2)
 	widget.Fonts["default"] = font
 	widget.Fonts["bold"] = bold
 	widget.Fonts["header"] = header
 	widget.Fonts["bigger"] = bigger
 
 	widget.BG = 0xff242424
-	widget.LineHeight = fontSize + 6
-	widget.Padding = Padding{10, 10, 10}
+	widget.LineHeight = widget.FontSize + 6
+	widget.Geometry = settings.Geometry
+	widget.Padding = settings.Padding
 	return widget
 }
 

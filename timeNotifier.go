@@ -10,14 +10,20 @@ import (
 )
 
 type TNotifier struct {
-	App *Application
+	App   *Application
+	Alias string
 }
 
 func (sw *TNotifier) SetApp(app *Application) {
 	sw.App = app
+	sw.Alias = "\uf017"
 }
 
-func (sw *TNotifier) Init() {
+func (sw *TNotifier) GetAlias() string {
+	return sw.Alias
+}
+
+func (sw *TNotifier) Init() WidgetSettings {
 	app := sw.App
 	window := sw.App.Window
 	fontSize = 14
@@ -29,6 +35,7 @@ func (sw *TNotifier) Init() {
 		panic(err)
 	}
 	app.Window = window
+	return WidgetSettings{fontSize, Geometry{int32(w), int32(h)}, Padding{10, 10, 10}}
 }
 
 func (sw *TNotifier) Draw() {

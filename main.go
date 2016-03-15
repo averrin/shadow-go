@@ -25,13 +25,17 @@ func (app *Application) DrawMode() {
 	T := app.Widget
 	w := T.Geometry.Width
 	h := T.Geometry.Height
-	line := fmt.Sprintf("[%s]", app.Mode)
+	m := app.Mode
+	if app.Modes[app.Mode].GetAlias() != "" {
+		m = app.Modes[app.Mode].GetAlias()
+	}
+	line := fmt.Sprintf("[%s]", m)
 	lw, _, _ := T.Fonts["default"].SizeUTF8(line)
 	r := sdl.Rect{int32(w) - T.Padding.Right - int32(lw), int32(h-4) - int32(T.LineHeight), int32(lw), int32(T.LineHeight)}
 	T.DrawColoredText(line,
 		&r, "highlight", "default",
 		[]HighlightRule{
-			HighlightRule{1, len(app.Mode), "accent", "default"},
+			HighlightRule{1, len(m), "accent", "default"},
 		},
 	)
 	T.Renderer.Present()
@@ -46,26 +50,25 @@ type Application struct {
 }
 
 type Mode interface {
-	Init()
+	Init() WidgetSettings
 	Draw()
 	Run() int
 	SetApp(*Application)
+	GetAlias() string
 }
 
 func (app *Application) run() int {
 	sdl.Init(sdl.INIT_EVERYTHING)
 	ttf.Init()
 
-	app.Modes[app.Mode].Init()
+	settings := app.Modes[app.Mode].Init()
 	defer app.Window.Destroy()
 	renderer, err := sdl.CreateRenderer(app.Window, -1, sdl.RENDERER_ACCELERATED)
 	surface, err := app.Window.GetSurface()
 	if err != nil {
 		panic(err)
 	}
-	app.Widget = NewTextWidget(app, renderer, surface)
-	w, h := app.Window.GetSize()
-	app.Widget.Geometry = Geometry{int32(w), int32(h)}
+	app.Widget = NewTextWidget(app, renderer, surface, settings)
 	app.Widget.FullClear()
 	app.Modes[app.Mode].Draw()
 

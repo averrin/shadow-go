@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	// "log"
 	"os"
 	"os/exec"
@@ -15,6 +16,7 @@ import (
 
 type Runner struct {
 	App      *Application
+	Alias    string
 	Items    []string
 	Suggests []string
 	Selected int
@@ -22,6 +24,11 @@ type Runner struct {
 
 func (R *Runner) SetApp(app *Application) {
 	R.App = app
+	R.Alias = "\uf120"
+}
+
+func (R *Runner) GetAlias() string {
+	return R.Alias
 }
 
 func getExec() []string {
@@ -36,7 +43,7 @@ func getExec() []string {
 	return ret
 }
 
-func (R *Runner) Init() {
+func (R *Runner) Init() WidgetSettings {
 	app := R.App
 	window := R.App.Window
 	fontSize = 14
@@ -49,7 +56,8 @@ func (R *Runner) Init() {
 	}
 	app.Window = window
 	R.Items = getExec()
-	R.Suggests = R.Items[:13]
+	R.Suggests = R.Items[:12]
+	return WidgetSettings{fontSize, Geometry{int32(w), int32(h)}, Padding{10, 30, 10}}
 }
 
 func (R *Runner) Draw() {
@@ -57,14 +65,14 @@ func (R *Runner) Draw() {
 	go GetTime(c)
 	app := R.App
 	T := app.Widget
-	T.Padding.Left = 30
 	T.Reset()
 	T.App.DrawMode()
-	r := sdl.Rect{T.Padding.Left - 14, T.Padding.Top - 1, 6, int32(T.LineHeight)}
-	T.DrawColoredText(">", &r, "accent", "bold", []HighlightRule{})
+	r := sdl.Rect{T.Padding.Left - 14, T.Padding.Top, 6, int32(T.LineHeight)}
+	// T.DrawColoredText(">", &r, "accent", "bold", []HighlightRule{})
+	T.DrawColoredText("\uf054", &r, "accent", "bold", []HighlightRule{})
 	T.AddLine(Line{"", []HighlightRule{}})
 	T.MoveCursor(0, 0)
-	for _, e := range R.Items[:13] {
+	for _, e := range R.Items[:12] {
 		T.AddLine(Line{e, []HighlightRule{}})
 	}
 }
@@ -211,14 +219,16 @@ func (R *Runner) Autocomplete() {
 	tokens := strings.Split(T.Content[0].Content, " ")
 	line := tokens[0]
 	items := fuzzy.RankFindFold(line, R.Items)
-	sort.Sort(items)
-	line = items[0].Target
-	if len(tokens) > 1 {
-		line += " " + strings.Join(tokens[1:], " ")
+	if len(items) > 0 {
+		sort.Sort(items)
+		line = items[0].Target
+		if len(tokens) > 1 {
+			line += " " + strings.Join(tokens[1:], " ")
+		}
+		T.SetLine(0, Line{line, []HighlightRule{HighlightRule{0, len(line), "green", "default"}}})
+		T.MoveCursor(0, len(line))
+		R.Update()
 	}
-	T.SetLine(0, Line{line, []HighlightRule{HighlightRule{0, len(line), "green", "default"}}})
-	T.MoveCursor(0, len(line))
-	R.Update()
 }
 
 func (R *Runner) Update() {
@@ -226,7 +236,7 @@ func (R *Runner) Update() {
 	T := R.App.Widget
 	line := strings.Split(T.Content[0].Content, " ")[0]
 	items := fuzzy.RankFindFold(line, R.Items)
-	end := 13
+	end := 12
 	if end > len(items) {
 		end = len(items)
 	}
@@ -252,6 +262,10 @@ func (R *Runner) Update() {
 	newContent := T.Content[:1]
 	for _, item := range R.Suggests {
 		newContent = append(newContent, Line{item, []HighlightRule{}})
+	}
+	log.Println()
+	if len(items) > len(R.Suggests) {
+		newContent = append(newContent, Line{fmt.Sprintf("%d more…", len(items)-12), []HighlightRule{HighlightRule{0, -1, "gray", "default"}}})
 	}
 	T.SetContent(newContent)
 	if len(R.Suggests) == 1 {

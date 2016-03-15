@@ -49,14 +49,20 @@ func GetClients() []Client {
 }
 
 type Switcher struct {
-	App *Application
+	App   *Application
+	Alias string
 }
 
 func (sw *Switcher) SetApp(app *Application) {
 	sw.App = app
+	sw.Alias = "\uf248"
 }
 
-func (sw *Switcher) Init() {
+func (sw *Switcher) GetAlias() string {
+	return sw.Alias
+}
+
+func (sw *Switcher) Init() WidgetSettings {
 	app := sw.App
 	window := sw.App.Window
 	CLIENTS = GetClients()
@@ -69,6 +75,7 @@ func (sw *Switcher) Init() {
 		panic(err)
 	}
 	app.Window = window
+	return WidgetSettings{fontSize, Geometry{int32(w), int32(h)}, Padding{10, 10, 10}}
 }
 
 func (sw *Switcher) Draw() {
