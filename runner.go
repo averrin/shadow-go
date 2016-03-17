@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"path"
 	// "log"
 	"os"
 	"os/exec"
+	"os/user"
 	"sort"
 	"strings"
 
@@ -34,13 +37,25 @@ func (R *Runner) GetAlias() string {
 	return R.Alias
 }
 
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
+}
+
 func getExec() []string {
-	var ret []string
+	ret := readExec()
 	pathes := strings.Split(os.Getenv("PATH"), ":")
 	for _, path := range pathes {
 		fi, _ := ioutil.ReadDir(path)
 		for n := range fi {
-			ret = append(ret, fi[n].Name())
+			line := fi[n].Name()
+			if !stringInSlice(line, ret) {
+				ret = append(ret, line)
+			}
 		}
 	}
 	return ret
@@ -294,5 +309,53 @@ func execCommand(cmd string) int {
 	if err != nil {
 		return 1
 	}
+	saveExec(cmd)
 	return 0
+}
+
+func readExec() []string {
+	ret := []string{}
+	usr, _ := user.Current()
+	filename := path.Join(usr.HomeDir, ".shadow_history")
+	if _, err := os.Stat(filename); err == nil {
+		file, err := os.Open(filename)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer file.Close()
+
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			line := strings.TrimSpace(scanner.Text())
+			if line != "" && !strings.HasPrefix(line, "#") {
+				ret = append(ret, line)
+			}
+		}
+
+		if err := scanner.Err(); err != nil {
+			log.Fatal(err)
+		}
+	}
+	return ret
+}
+
+func saveExec(text string) {
+	lines := readExec()
+	if stringInSlice(text, lines) {
+		return
+	}
+	usr, err := user.Current()
+	filename := path.Join(usr.HomeDir, ".shadow_history")
+	if _, err := os.Stat(filename); err != nil {
+		os.Create(filename)
+	}
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+
+	defer f.Close()
+	if _, err = f.WriteString(text + "\n"); err != nil {
+		panic(err)
+	}
 }
