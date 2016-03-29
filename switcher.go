@@ -52,8 +52,10 @@ func GetClients() []Client {
 
 //Switcher mode
 type Switcher struct {
-	App   *Application
-	Alias string
+	App      *Application
+	Selected int
+	Clients  []Client
+	Alias    string
 }
 
 //SetApp interface method
@@ -69,12 +71,13 @@ func (sw *Switcher) GetAlias() string {
 
 //Init interface method
 func (sw *Switcher) Init() WidgetSettings {
+	sw.Selected = 0
 	app := sw.App
 	window := sw.App.Window
-	CLIENTS = GetClients()
+	sw.Clients = GetClients()
 	fontSize = 14
 	w := 500
-	h := (fontSize + 10) * len(CLIENTS)
+	h := (fontSize + 10) * len(sw.Clients)
 	window, err := sdl.CreateWindow("Shadow", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
 		w, h, sdl.WINDOW_SHOWN)
 	if err != nil {
@@ -89,8 +92,8 @@ func (sw *Switcher) Draw() {
 	app := sw.App
 	T := app.Widget
 	T.Reset()
-	for i, client := range CLIENTS {
-		T.AddLine(sw.getLine(i, client, SELECTED == i))
+	for i, client := range sw.Clients {
+		T.AddLine(sw.getLine(i, client, sw.Selected == i))
 	}
 	T.App.DrawMode()
 }
@@ -120,7 +123,7 @@ func (sw *Switcher) getLine(i int, client Client, focused bool) Line {
 		line = T.StripLine(line, "bold")
 		ret = Line{line,
 			[]HighlightRule{
-				HighlightRule{0, 1, "accent", "default"},
+				HighlightRule{0, 1, ACCENT, "default"},
 				HighlightRule{1, len(line) - 2, "highlight", "bold"},
 			},
 		}
@@ -138,7 +141,7 @@ func (sw *Switcher) Run() int {
 		switch t := event.(type) {
 		case *sdl.WindowEvent:
 			if t.Event == sdl.WINDOWEVENT_FOCUS_GAINED {
-				CLIENTS = GetClients()
+				sw.Clients = GetClients()
 				sw.Draw()
 			}
 			if t.Event == sdl.WINDOWEVENT_FOCUS_LOST {
@@ -151,39 +154,39 @@ func (sw *Switcher) Run() int {
 				t.Timestamp, t.Type, sdl.GetScancodeName(t.Keysym.Scancode), t.Keysym.Mod, t.State, t.Repeat)
 			key := sdl.GetScancodeName(t.Keysym.Scancode)
 			if (key == "N" && t.Keysym.Mod == 64) || key == "Down" {
-				T.SetLine(SELECTED, sw.getLine(SELECTED, CLIENTS[SELECTED], false))
-				if SELECTED < len(CLIENTS)-1 {
-					SELECTED++
+				T.SetLine(sw.Selected, sw.getLine(sw.Selected, sw.Clients[sw.Selected], false))
+				if sw.Selected < len(sw.Clients)-1 {
+					sw.Selected++
 				} else {
-					SELECTED = 0
+					sw.Selected = 0
 				}
-				T.SetLine(SELECTED, sw.getLine(SELECTED, CLIENTS[SELECTED], true))
+				T.SetLine(sw.Selected, sw.getLine(sw.Selected, sw.Clients[sw.Selected], true))
 				return 1
 			}
 			if (key == "P" && t.Keysym.Mod == 64) || key == "Up" {
-				T.SetLine(SELECTED, sw.getLine(SELECTED, CLIENTS[SELECTED], false))
-				if SELECTED > 0 {
-					SELECTED--
+				T.SetLine(sw.Selected, sw.getLine(sw.Selected, sw.Clients[sw.Selected], false))
+				if sw.Selected > 0 {
+					sw.Selected--
 				} else {
-					SELECTED = len(CLIENTS) - 1
+					sw.Selected = len(sw.Clients) - 1
 				}
-				T.SetLine(SELECTED, sw.getLine(SELECTED, CLIENTS[SELECTED], true))
+				T.SetLine(sw.Selected, sw.getLine(sw.Selected, sw.Clients[sw.Selected], true))
 				return 1
 			}
 			if key == "X" && t.Keysym.Mod == 64 {
-				wid := CLIENTS[SELECTED].WID
+				wid := sw.Clients[sw.Selected].WID
 				ewmh.CloseWindow(X, wid)
 				sdl.Delay(500)
-				CLIENTS = GetClients()
+				sw.Clients = GetClients()
 				sw.Draw()
 				return 1
 			}
 			if (key == "J" && t.Keysym.Mod == 64) || key == "Return" {
-				wid := CLIENTS[SELECTED].WID
+				wid := sw.Clients[sw.Selected].WID
 				ewmh.ActiveWindowReq(X, wid)
 				return 0
 			}
-			if key == "Escape" || key == "CapsLock" {
+			if t.Keysym.Sym == sdl.K_ESCAPE || t.Keysym.Sym == sdl.K_CAPSLOCK {
 				return 0
 			}
 		}

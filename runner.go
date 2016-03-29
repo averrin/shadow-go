@@ -21,6 +21,7 @@ import (
 type Runner struct {
 	App      *Application
 	Alias    string
+	History  []string
 	Items    []string
 	Suggests []string
 	Selected int
@@ -46,8 +47,8 @@ func stringInSlice(a string, list []string) bool {
 	return false
 }
 
-func getExec() []string {
-	ret := readExec()
+func (R *Runner) getExec() []string {
+	ret := R.History
 	pathes := strings.Split(os.Getenv("PATH"), ":")
 	for _, path := range pathes {
 		fi, _ := ioutil.ReadDir(path)
@@ -74,7 +75,8 @@ func (R *Runner) Init() WidgetSettings {
 		panic(err)
 	}
 	app.Window = window
-	R.Items = getExec()
+	R.History = readExec()
+	R.Items = R.getExec()
 	R.Suggests = R.Items[:12]
 	return WidgetSettings{fontSize, Geometry{int32(w), int32(h)}, Padding{10, 30, 10}}
 }
@@ -87,9 +89,13 @@ func (R *Runner) Draw() {
 	T := app.Widget
 	T.Reset()
 	T.App.DrawMode()
-	r := sdl.Rect{T.Padding.Left - 14, T.Padding.Top, 6, int32(T.LineHeight)}
-	// T.DrawColoredText(">", &r, "accent", "bold", []HighlightRule{})
-	T.DrawColoredText("\uf054", &r, "accent", "bold", []HighlightRule{})
+	r := sdl.Rect{
+		X: T.Padding.Left - 14,
+		Y: T.Padding.Top,
+		W: 6,
+		H: int32(T.LineHeight),
+	}
+	T.DrawColoredText("\uf054", &r, ACCENT, "bold", []HighlightRule{})
 	T.AddLine(Line{"", []HighlightRule{}})
 	T.MoveCursor(0, 0)
 	for _, e := range R.Items[:12] {
@@ -106,10 +112,10 @@ func isASCII(s string) bool {
 	return true
 }
 
+// Run is main mode loop
 func (R *Runner) Run() int {
 	app := R.App
 	T := app.Widget
-	// window := R.App.Window
 	var event sdl.Event
 	for event = sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 		switch t := event.(type) {
@@ -126,7 +132,7 @@ func (R *Runner) Run() int {
 			fmt.Printf("[%d ms] Keyboard\ttype:%d\tname:%s\tmodifiers:%d\tstate:%d\trepeat:%d\tsym: %c\n",
 				t.Timestamp, t.Type, sdl.GetScancodeName(t.Keysym.Scancode), t.Keysym.Mod, t.State, t.Repeat, t.Keysym.Sym)
 			key := sdl.GetScancodeName(t.Keysym.Scancode)
-			if key == "Escape" || key == "CapsLock" {
+			if t.Keysym.Sym == sdl.K_ESCAPE || t.Keysym.Sym == sdl.K_CAPSLOCK {
 				return 0
 			}
 			if (key == "H" && t.Keysym.Mod == 64) || key == "Backspace" {
@@ -218,7 +224,7 @@ func (R *Runner) next() {
 		R.Selected = 0
 	}
 	T.SetRules(R.Selected+1, []HighlightRule{HighlightRule{0, -1, "highlight", "bold"}})
-	T.SetLine(0, Line{R.Suggests[R.Selected], []HighlightRule{HighlightRule{0, -1, "green", "default"}}})
+	T.SetLine(0, Line{R.Suggests[R.Selected], []HighlightRule{HighlightRule{0, -1, GREEN, "default"}}})
 	T.MoveCursor(0, len(R.Suggests[R.Selected]))
 }
 
@@ -230,7 +236,7 @@ func (R *Runner) prev() {
 	}
 	R.Selected--
 	T.SetRules(R.Selected+1, []HighlightRule{HighlightRule{0, -1, "highlight", "bold"}})
-	T.SetLine(0, Line{R.Suggests[R.Selected], []HighlightRule{HighlightRule{0, -1, "green", "default"}}})
+	T.SetLine(0, Line{R.Suggests[R.Selected], []HighlightRule{HighlightRule{0, -1, GREEN, "default"}}})
 	T.MoveCursor(0, len(R.Suggests[R.Selected]))
 }
 
@@ -245,7 +251,7 @@ func (R *Runner) autocomplete() {
 		if len(tokens) > 1 {
 			line += " " + strings.Join(tokens[1:], " ")
 		}
-		T.SetLine(0, Line{line, []HighlightRule{HighlightRule{0, len(line), "green", "default"}}})
+		T.SetLine(0, Line{line, []HighlightRule{HighlightRule{0, len(line), GREEN, "default"}}})
 		T.MoveCursor(0, len(line))
 		R.update()
 	}
@@ -270,10 +276,10 @@ func (R *Runner) update() {
 			return r
 		}()
 		if line == R.Suggests[0] {
-			T.SetRules(0, []HighlightRule{HighlightRule{0, len(line), "green", "default"}})
+			T.SetRules(0, []HighlightRule{HighlightRule{0, len(line), GREEN, "default"}})
 		} else {
 			if len(R.Suggests) == 1 {
-				T.SetRules(0, []HighlightRule{HighlightRule{0, len(line), "accent", "default"}})
+				T.SetRules(0, []HighlightRule{HighlightRule{0, len(line), ACCENT, "default"}})
 			} else {
 				T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
 			}
@@ -294,7 +300,12 @@ func (R *Runner) update() {
 			suggest := first[len(line):]
 			ll, _, _ := T.Fonts["default"].SizeUTF8(line)
 			sl, _, _ := T.Fonts["default"].SizeUTF8(suggest)
-			r := sdl.Rect{T.Padding.Left + int32(ll), T.Padding.Top, int32(sl), int32(T.LineHeight)}
+			r := sdl.Rect{
+				X: T.Padding.Left + int32(ll),
+				Y: T.Padding.Top,
+				W: int32(sl),
+				H: int32(T.LineHeight),
+			}
 			T.DrawColoredText(suggest, &r, "gray", "default", []HighlightRule{})
 			T.Show()
 		}
@@ -346,7 +357,7 @@ func saveExec(text string) {
 	}
 	usr, err := user.Current()
 	filename := path.Join(usr.HomeDir, ".shadow_history")
-	if _, err := os.Stat(filename); err != nil {
+	if _, err = os.Stat(filename); err != nil {
 		os.Create(filename)
 	}
 	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0644)

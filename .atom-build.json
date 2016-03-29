@@ -1,0 +1,16 @@
+{
+  "keymap": "alt-v",
+  "cwd": "{PROJECT_PATH}",
+  "cmd": "/usr/local/go/bin/go",
+  "name": "shadow",
+  "args": ["build", "-ldflags \"-s\"", "-o", "./shadow", "./*.go"],
+  "sh": true,
+  "atomCommandName": "Shadow:build",
+  "env": {
+    "GOROOT": "/usr/local/go",
+    "GOPATH": "/home/user/projects/go:/home/user/projects/shadow-go"
+  },
+  "errorMatch": [
+    "(?<file>[\/0-9a-zA-Z\\._]+):(?<line>\\d+): (?<message>.+)"
+  ]
+}

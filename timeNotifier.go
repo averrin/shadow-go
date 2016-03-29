@@ -83,8 +83,8 @@ func (tn *TNotifier) Run() int {
 		case *sdl.KeyDownEvent:
 			fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%s\tmodifiers:%d\tstate:%d\trepeat:%d\n",
 				t.Timestamp, t.Type, sdl.GetScancodeName(t.Keysym.Scancode), t.Keysym.Mod, t.State, t.Repeat)
-			key := sdl.GetScancodeName(t.Keysym.Scancode)
-			if key == "Escape" || key == "CapsLock" {
+			// key := sdl.GetScancodeName(t.Keysym.Scancode)
+			if t.Keysym.Sym == sdl.K_ESCAPE || t.Keysym.Sym == sdl.K_CAPSLOCK {
 				return 0
 			}
 		}

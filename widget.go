@@ -11,27 +11,38 @@ import (
 	"github.com/veandco/go-sdl2/sdl_ttf"
 )
 
+// Colors
+var (
+	ACCENT = "accent"
+	GREEN  = "green"
+)
+
+// Geometry is widget size
 type Geometry struct {
 	Width  int32
 	Height int32
 }
 
+// Padding is paddings
 type Padding struct {
 	Top   int32
 	Left  int32
 	Right int32
 }
 
+// Line is line of text
 type Line struct {
 	Content string
 	Rules   []HighlightRule
 }
 
+// Cursor is cursor cords
 type Cursor struct {
 	Row    int
 	Column int
 }
 
+// TextWidget is text canvas
 type TextWidget struct {
 	App        *Application
 	Renderer   *sdl.Renderer
@@ -47,12 +58,14 @@ type TextWidget struct {
 	Cursor
 }
 
+// WidgetSettings is init settings struct
 type WidgetSettings struct {
 	FontSize int
 	Geometry
 	Padding
 }
 
+// NewTextWidget is constructor
 func NewTextWidget(app *Application, renderer *sdl.Renderer, surface *sdl.Surface, settings WidgetSettings) *TextWidget {
 	widget := new(TextWidget)
 	widget.App = app
@@ -64,13 +77,48 @@ func NewTextWidget(app *Application, renderer *sdl.Renderer, surface *sdl.Surfac
 	widget.Cursor = Cursor{0, 0}
 	widget.FontSize = settings.FontSize
 
-	widget.Colors["foreground"] = sdl.Color{200, 200, 200, 1}
-	widget.Colors["highlight"] = sdl.Color{255, 255, 255, 1}
-	widget.Colors["accent"] = sdl.Color{129, 162, 190, 1}
-	widget.Colors["gray"] = sdl.Color{130, 130, 130, 1}
-	widget.Colors["orange"] = sdl.Color{240, 198, 116, 1}
-	widget.Colors["red"] = sdl.Color{215, 46, 46, 1}
-	widget.Colors["green"] = sdl.Color{110, 173, 110, 1}
+	widget.Colors["foreground"] = sdl.Color{
+		R: 200,
+		G: 200,
+		B: 200,
+		A: 1,
+	}
+	widget.Colors["highlight"] = sdl.Color{
+		R: 255,
+		G: 255,
+		B: 255,
+		A: 1,
+	}
+	widget.Colors[ACCENT] = sdl.Color{
+		R: 129,
+		G: 162,
+		B: 190,
+		A: 1,
+	}
+	widget.Colors["gray"] = sdl.Color{
+		R: 130,
+		G: 130,
+		B: 130,
+		A: 1,
+	}
+	widget.Colors["orange"] = sdl.Color{
+		R: 240,
+		G: 198,
+		B: 116,
+		A: 1,
+	}
+	widget.Colors["red"] = sdl.Color{
+		R: 215,
+		G: 46,
+		B: 46,
+		A: 1,
+	}
+	widget.Colors[GREEN] = sdl.Color{
+		R: 110,
+		G: 173,
+		B: 110,
+		A: 1,
+	}
 
 	cwd, _ := filepath.Abs(filepath.Dir(os.Args[0]))
 	dir := filepath.Join(cwd, "fonts")
@@ -94,15 +142,22 @@ func NewTextWidget(app *Application, renderer *sdl.Renderer, surface *sdl.Surfac
 	return widget
 }
 
+// SetContent is
 func (T *TextWidget) SetContent(content []Line) {
 	T.Content = content
 	T.Update()
 }
 
+// SetLine is
 func (T *TextWidget) SetLine(index int, line Line) {
 	w := T.Geometry.Width
 	// h := T.Geometry.Height
-	r := sdl.Rect{T.Padding.Left, T.Padding.Top + int32(index*T.LineHeight), int32(w), int32(T.LineHeight)}
+	r := sdl.Rect{
+		X: T.Padding.Left,
+		Y: T.Padding.Top + int32(index*T.LineHeight),
+		W: int32(w),
+		H: int32(T.LineHeight),
+	}
 	T.Content[index] = line
 	T.Surface.FillRect(&r, T.BG)
 	T.DrawColoredText(line.Content,
@@ -115,10 +170,16 @@ func (T *TextWidget) SetLine(index int, line Line) {
 	T.App.Window.UpdateSurface()
 }
 
+// AddLine is
 func (T *TextWidget) AddLine(line Line) {
 	w := T.Geometry.Width
 	h := T.Geometry.Height
-	r := sdl.Rect{T.Padding.Left, T.Padding.Top + int32(len(T.Content)*T.LineHeight), int32(w), int32(h)}
+	r := sdl.Rect{
+		X: T.Padding.Left,
+		Y: T.Padding.Top + int32(len(T.Content)*T.LineHeight),
+		W: int32(w),
+		H: int32(h),
+	}
 	T.Content = append(T.Content, line)
 	T.DrawColoredText(line.Content,
 		&r, "foreground", "default",
@@ -130,22 +191,30 @@ func (T *TextWidget) AddLine(line Line) {
 	T.App.Window.UpdateSurface()
 }
 
+// ClearContent is
 func (T *TextWidget) ClearContent() {
 	T.Content = []Line{}
 }
 
+// Reset is
 func (T *TextWidget) Reset() {
 	T.ClearContent()
 	T.Clear()
 }
 
+// Update is
 func (T *TextWidget) Update() {
 	w := T.Geometry.Width
 	// h := T.Geometry.Height
 	var r sdl.Rect
 	T.Clear()
 	for i, line := range T.Content {
-		r = sdl.Rect{T.Padding.Left, T.Padding.Top + int32(i*T.LineHeight), int32(w), int32(T.LineHeight)}
+		r = sdl.Rect{
+			X: T.Padding.Left,
+			Y: T.Padding.Top + int32(i*T.LineHeight),
+			W: int32(w),
+			H: int32(T.LineHeight),
+		}
 		T.DrawColoredText(line.Content,
 			&r, "foreground", "default",
 			line.Rules,
@@ -160,11 +229,13 @@ func (T *TextWidget) Update() {
 	T.App.Window.UpdateSurface()
 }
 
+// Show is
 func (T *TextWidget) Show() {
 	T.Renderer.Present()
 	T.App.Window.UpdateSurface()
 }
 
+// StripLine is
 func (T *TextWidget) StripLine(line string, fontname string) string {
 	w := T.Geometry.Width
 	lw, _, _ := T.Fonts[fontname].SizeUTF8(line)
@@ -175,20 +246,33 @@ func (T *TextWidget) StripLine(line string, fontname string) string {
 	return line
 }
 
+// FullClear is
 func (T *TextWidget) FullClear() {
 	w := T.Geometry.Width
 	h := T.Geometry.Height
-	rect := sdl.Rect{0, 0, int32(w), int32(h)}
+	rect := sdl.Rect{
+		X: 0,
+		Y: 0,
+		W: int32(w),
+		H: int32(h),
+	}
 	T.Surface.FillRect(&rect, T.BG)
 }
 
+// Clear is
 func (T *TextWidget) Clear() {
 	w := T.Geometry.Width - T.Padding.Left - T.Padding.Right + 3
 	h := T.Geometry.Height - T.Padding.Top
-	rect := sdl.Rect{T.Padding.Left, T.Padding.Top, int32(w), int32(h)}
+	rect := sdl.Rect{
+		X: T.Padding.Left,
+		Y: T.Padding.Top,
+		W: int32(w),
+		H: int32(h),
+	}
 	T.Surface.FillRect(&rect, T.BG)
 }
 
+// DrawText is
 func (T *TextWidget) DrawText(text string, rect *sdl.Rect, colorName string, fontName string) {
 	if strings.TrimSpace(text) == "" {
 		return
@@ -216,6 +300,7 @@ func (T *TextWidget) DrawText(text string, rect *sdl.Rect, colorName string, fon
 	message.Blit(&srcRect, T.Surface, rect)
 }
 
+// HighlightRule is highlighting rule
 type HighlightRule struct {
 	Start int
 	Len   int
@@ -223,6 +308,7 @@ type HighlightRule struct {
 	Font  string
 }
 
+// DrawColoredText is
 func (T *TextWidget) DrawColoredText(text string, rect *sdl.Rect, colorName string, fontName string, rules []HighlightRule) {
 	if len(rules) == 0 {
 		T.DrawText(text, rect, colorName, fontName)
@@ -235,7 +321,12 @@ func (T *TextWidget) DrawColoredText(text string, rect *sdl.Rect, colorName stri
 			if len(token) > 0 {
 				T.DrawText(token, rect, colorName, fontName)
 				tw, _, _ = T.Fonts[fontName].SizeUTF8(token)
-				rect = &sdl.Rect{rect.X + int32(tw), rect.Y, rect.W - int32(tw), rect.H}
+				rect = &sdl.Rect{
+					X: rect.X + int32(tw),
+					Y: rect.Y,
+					W: rect.W - int32(tw),
+					H: rect.H,
+				}
 			}
 			text = text[rules[i].Start:]
 			// log.Println(text, rules[i].Len)
@@ -247,7 +338,12 @@ func (T *TextWidget) DrawColoredText(text string, rect *sdl.Rect, colorName stri
 			// log.Println(token)
 			T.DrawText(token, rect, rules[i].Color, rules[i].Font)
 			tw, _, _ = T.Fonts[fontName].SizeUTF8(token)
-			rect = &sdl.Rect{rect.X + int32(tw), rect.Y, rect.W - int32(tw), rect.H}
+			rect = &sdl.Rect{
+				X: rect.X + int32(tw),
+				Y: rect.Y,
+				W: rect.W - int32(tw),
+				H: rect.H,
+			}
 			text = text[l:]
 			// log.Println(text)
 		}
@@ -257,6 +353,7 @@ func (T *TextWidget) DrawColoredText(text string, rect *sdl.Rect, colorName stri
 	}
 }
 
+// MoveCursor is
 func (T *TextWidget) MoveCursor(r int, c int) (int, int) {
 	T.Cursor.Row = r
 	line := T.Content[T.Cursor.Row]
@@ -267,26 +364,31 @@ func (T *TextWidget) MoveCursor(r int, c int) (int, int) {
 	return T.Cursor.Row, T.Cursor.Column
 }
 
+// MoveCursorLeft is
 func (T *TextWidget) MoveCursorLeft() (int, int) {
 	T.MoveCursor(T.Cursor.Row, T.Cursor.Column-1)
 	return T.Cursor.Row, T.Cursor.Column
 }
 
+// MoveCursorRight is
 func (T *TextWidget) MoveCursorRight() (int, int) {
 	T.MoveCursor(T.Cursor.Row, T.Cursor.Column+1)
 	return T.Cursor.Row, T.Cursor.Column
 }
 
+// MoveCursorUp is
 func (T *TextWidget) MoveCursorUp() (int, int) {
 	T.MoveCursor(T.Cursor.Row-1, T.Cursor.Column)
 	return T.Cursor.Row, T.Cursor.Column
 }
 
+// MoveCursorDown is
 func (T *TextWidget) MoveCursorDown() (int, int) {
 	T.MoveCursor(T.Cursor.Row+1, T.Cursor.Column)
 	return T.Cursor.Row, T.Cursor.Column
 }
 
+// addString is
 func (T *TextWidget) addString(s string) (int, int) {
 	line := T.Content[T.Cursor.Row]
 	i := T.Cursor.Column
@@ -296,6 +398,7 @@ func (T *TextWidget) addString(s string) (int, int) {
 	return T.Cursor.Row, T.Cursor.Column
 }
 
+// removeString is
 func (T *TextWidget) removeString(n int) (int, int) {
 	if T.Cursor.Column > 0 {
 		line := T.Content[T.Cursor.Row]
@@ -307,6 +410,7 @@ func (T *TextWidget) removeString(n int) (int, int) {
 	return T.Cursor.Row, T.Cursor.Column
 }
 
+// removeStringForward is
 func (T *TextWidget) removeStringForward(n int) (int, int) {
 	line := T.Content[T.Cursor.Row]
 	i := T.Cursor.Column
@@ -322,6 +426,7 @@ func (T *TextWidget) removeStringForward(n int) (int, int) {
 	return T.Cursor.Row, T.Cursor.Column
 }
 
+// removeWord is
 func (T *TextWidget) removeWord() (int, int) {
 	log.Println(T.Cursor.Column)
 	if T.Cursor.Column > 0 {
@@ -333,6 +438,7 @@ func (T *TextWidget) removeWord() (int, int) {
 	return T.Cursor.Row, T.Cursor.Column
 }
 
+// drawCursor is
 func (T *TextWidget) drawCursor() {
 	index := T.Cursor.Row
 	var lw int
@@ -342,14 +448,25 @@ func (T *TextWidget) drawCursor() {
 	} else {
 		lw = -10
 	}
-	rect := sdl.Rect{T.Padding.Left - 3, T.Padding.Top, 3, int32(T.LineHeight)}
+	rect := sdl.Rect{
+		X: T.Padding.Left - 3,
+		Y: T.Padding.Top,
+		W: 3,
+		H: int32(T.LineHeight),
+	}
 	T.Surface.FillRect(&rect, T.BG)
-	r := sdl.Rect{T.Padding.Left + int32(lw) + 5, T.Padding.Top + int32(index*T.LineHeight), int32(5), int32(T.LineHeight)}
+	r := sdl.Rect{
+		X: T.Padding.Left + int32(lw) + 5,
+		Y: T.Padding.Top + int32(index*T.LineHeight),
+		W: int32(5),
+		H: int32(T.LineHeight),
+	}
 	T.DrawColoredText("|", &r, "orange", "default", []HighlightRule{})
 	T.Renderer.Present()
 	T.App.Window.UpdateSurface()
 }
 
+// SetRules is
 func (T *TextWidget) SetRules(index int, rules []HighlightRule) {
 	line := T.Content[index]
 	line.Rules = rules

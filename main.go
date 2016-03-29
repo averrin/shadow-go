@@ -14,13 +14,15 @@ import (
 	"github.com/veandco/go-sdl2/sdl_ttf"
 )
 
-var SELECTED int
-var CLIENTS []Client
 var fontSize int
+
+// X is display manager
 var X *xgbutil.XUtil
 
+// SHADOW is WID of current opened shadow window
 var SHADOW xproto.Window
 
+// DrawMode is mode indicator drawing method
 func (app *Application) DrawMode() {
 	T := app.Widget
 	w := T.Geometry.Width
@@ -31,17 +33,23 @@ func (app *Application) DrawMode() {
 	}
 	line := fmt.Sprintf("[%s]", m)
 	lw, _, _ := T.Fonts["default"].SizeUTF8(line)
-	r := sdl.Rect{int32(w) - T.Padding.Right - int32(lw), int32(h-4) - int32(T.LineHeight), int32(lw), int32(T.LineHeight)}
+	r := sdl.Rect{
+		X: int32(w) - T.Padding.Right - int32(lw),
+		Y: int32(h-4) - int32(T.LineHeight),
+		W: int32(lw),
+		H: int32(T.LineHeight),
+	}
 	T.DrawColoredText(line,
 		&r, "highlight", "default",
 		[]HighlightRule{
-			HighlightRule{1, len(m), "accent", "default"},
+			HighlightRule{1, len(m), ACCENT, "default"},
 		},
 	)
 	T.Renderer.Present()
 	T.App.Window.UpdateSurface()
 }
 
+// Application is main class
 type Application struct {
 	Mode   string
 	Widget *TextWidget
@@ -49,6 +57,7 @@ type Application struct {
 	Window *sdl.Window
 }
 
+// Mode is mode logic interface
 type Mode interface {
 	Init() WidgetSettings
 	Draw()
@@ -83,7 +92,7 @@ func (app *Application) run() int {
 	return 0
 }
 
-func NewApplication(mode string) *Application {
+func newApplication(mode string) *Application {
 	app := new(Application)
 	app.Mode = mode
 	app.Modes = make(map[string]Mode)
@@ -104,14 +113,13 @@ func NewApplication(mode string) *Application {
 func main() {
 	mode := flag.String("mode", "tasks", "shadow mode")
 	flag.Parse()
-	SELECTED = 0
 	lockPath := path.Join("/tmp", "shadow.lock")
 	if fi, _ := os.Stat(lockPath); fi != nil {
 		log.Println(fi)
 		GetClients()
 		ewmh.ActiveWindowReq(X, SHADOW)
 	} else {
-		app := NewApplication(*mode)
+		app := newApplication(*mode)
 		os.Create(lockPath)
 		os.Exit(app.run())
 	}
