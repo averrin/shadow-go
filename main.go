@@ -93,7 +93,19 @@ func (app *Application) run() int {
 			case *sdl.KeyDownEvent:
 				fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%s\tmodifiers:%d\tstate:%d\trepeat:%d\n",
 					t.Timestamp, t.Type, sdl.GetScancodeName(t.Keysym.Scancode), t.Keysym.Mod, t.State, t.Repeat)
+				key := sdl.GetScancodeName(t.Keysym.Scancode)
+				//TODO: make mode switching more robust
 				if t.Keysym.Sym == sdl.K_ESCAPE || t.Keysym.Sym == sdl.K_CAPSLOCK {
+					ret = 0
+				} else if key == "S" && t.Keysym.Mod == 64 && app.Mode != "tasks" {
+					app.Mode = "tasks"
+					app.Window.Destroy()
+					app.run()
+					ret = 0
+				} else if key == "R" && t.Keysym.Mod == 64 && app.Mode != "runner" {
+					app.Mode = "runner"
+					app.Window.Destroy()
+					app.run()
 					ret = 0
 				} else {
 					ret = app.Modes[app.Mode].DispatchKeys(t)
