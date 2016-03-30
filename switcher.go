@@ -131,64 +131,60 @@ func (sw *Switcher) getLine(i int, client Client, focused bool) Line {
 	return ret
 }
 
-//Run interface method
-func (sw *Switcher) Run() int {
+//DispatchKeys interface method
+func (sw *Switcher) DispatchKeys(t *sdl.KeyDownEvent) int {
 	app := sw.App
 	T := app.Widget
-	// window := sw.App.Window
-	var event sdl.Event
-	for event = sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-		switch t := event.(type) {
-		case *sdl.WindowEvent:
-			if t.Event == sdl.WINDOWEVENT_FOCUS_GAINED {
-				sw.Clients = GetClients()
-				sw.Draw()
-			}
-			if t.Event == sdl.WINDOWEVENT_FOCUS_LOST {
-				ewmh.ActiveWindowReq(X, SHADOW)
-			}
-		case *sdl.QuitEvent:
-			return 0
-		case *sdl.KeyDownEvent:
-			fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%s\tmodifiers:%d\tstate:%d\trepeat:%d\n",
-				t.Timestamp, t.Type, sdl.GetScancodeName(t.Keysym.Scancode), t.Keysym.Mod, t.State, t.Repeat)
-			key := sdl.GetScancodeName(t.Keysym.Scancode)
-			if (key == "N" && t.Keysym.Mod == 64) || key == "Down" {
-				T.SetLine(sw.Selected, sw.getLine(sw.Selected, sw.Clients[sw.Selected], false))
-				if sw.Selected < len(sw.Clients)-1 {
-					sw.Selected++
-				} else {
-					sw.Selected = 0
-				}
-				T.SetLine(sw.Selected, sw.getLine(sw.Selected, sw.Clients[sw.Selected], true))
-				return 1
-			}
-			if (key == "P" && t.Keysym.Mod == 64) || key == "Up" {
-				T.SetLine(sw.Selected, sw.getLine(sw.Selected, sw.Clients[sw.Selected], false))
-				if sw.Selected > 0 {
-					sw.Selected--
-				} else {
-					sw.Selected = len(sw.Clients) - 1
-				}
-				T.SetLine(sw.Selected, sw.getLine(sw.Selected, sw.Clients[sw.Selected], true))
-				return 1
-			}
-			if key == "X" && t.Keysym.Mod == 64 {
-				wid := sw.Clients[sw.Selected].WID
-				ewmh.CloseWindow(X, wid)
-				sdl.Delay(500)
-				sw.Clients = GetClients()
-				sw.Draw()
-				return 1
-			}
-			if (key == "J" && t.Keysym.Mod == 64) || key == "Return" {
-				wid := sw.Clients[sw.Selected].WID
-				ewmh.ActiveWindowReq(X, wid)
-				return 0
-			}
-			if t.Keysym.Sym == sdl.K_ESCAPE || t.Keysym.Sym == sdl.K_CAPSLOCK {
-				return 0
-			}
+	key := sdl.GetScancodeName(t.Keysym.Scancode)
+	if (key == "N" && t.Keysym.Mod == 64) || key == "Down" {
+		T.SetLine(sw.Selected, sw.getLine(sw.Selected, sw.Clients[sw.Selected], false))
+		if sw.Selected < len(sw.Clients)-1 {
+			sw.Selected++
+		} else {
+			sw.Selected = 0
+		}
+		T.SetLine(sw.Selected, sw.getLine(sw.Selected, sw.Clients[sw.Selected], true))
+		return 1
+	}
+	if (key == "P" && t.Keysym.Mod == 64) || key == "Up" {
+		T.SetLine(sw.Selected, sw.getLine(sw.Selected, sw.Clients[sw.Selected], false))
+		if sw.Selected > 0 {
+			sw.Selected--
+		} else {
+			sw.Selected = len(sw.Clients) - 1
+		}
+		T.SetLine(sw.Selected, sw.getLine(sw.Selected, sw.Clients[sw.Selected], true))
+		return 1
+	}
+	if key == "X" && t.Keysym.Mod == 64 {
+		wid := sw.Clients[sw.Selected].WID
+		ewmh.CloseWindow(X, wid)
+		sdl.Delay(500)
+		sw.Clients = GetClients()
+		sw.Draw()
+		return 1
+	}
+	if (key == "J" && t.Keysym.Mod == 64) || key == "Return" {
+		wid := sw.Clients[sw.Selected].WID
+		ewmh.ActiveWindowReq(X, wid)
+		return 0
+	}
+	if t.Keysym.Sym == sdl.K_ESCAPE || t.Keysym.Sym == sdl.K_CAPSLOCK {
+		return 0
+	}
+	return 1
+}
+
+//DispatchEvents interface method
+func (sw *Switcher) DispatchEvents(event sdl.Event) int {
+	switch t := event.(type) {
+	case *sdl.WindowEvent:
+		if t.Event == sdl.WINDOWEVENT_FOCUS_GAINED {
+			sw.Clients = GetClients()
+			sw.Draw()
+		}
+		if t.Event == sdl.WINDOWEVENT_FOCUS_LOST {
+			ewmh.ActiveWindowReq(X, SHADOW)
 		}
 	}
 	return 1

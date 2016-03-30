@@ -61,7 +61,8 @@ type Application struct {
 type Mode interface {
 	Init() WidgetSettings
 	Draw()
-	Run() int
+	DispatchEvents(sdl.Event) int
+	DispatchKeys(*sdl.KeyDownEvent) int
 	SetApp(*Application)
 	GetAlias() string
 }
@@ -83,9 +84,26 @@ func (app *Application) run() int {
 
 	running := true
 	for running {
-		ret := app.Modes[app.Mode].Run()
-		if ret == 0 {
-			running = false
+		var event sdl.Event
+		for event = sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			ret := 1
+			switch t := event.(type) {
+			case *sdl.QuitEvent:
+				ret = 0
+			case *sdl.KeyDownEvent:
+				fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%s\tmodifiers:%d\tstate:%d\trepeat:%d\n",
+					t.Timestamp, t.Type, sdl.GetScancodeName(t.Keysym.Scancode), t.Keysym.Mod, t.State, t.Repeat)
+				if t.Keysym.Sym == sdl.K_ESCAPE || t.Keysym.Sym == sdl.K_CAPSLOCK {
+					ret = 0
+				} else {
+					ret = app.Modes[app.Mode].DispatchKeys(t)
+				}
+			default:
+				ret = app.Modes[app.Mode].DispatchEvents(event)
+			}
+			if ret == 0 {
+				running = false
+			}
 		}
 	}
 	log.Println(os.Remove("/tmp/shadow.lock"))

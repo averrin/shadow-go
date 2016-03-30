@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -64,30 +63,12 @@ func (tn *TNotifier) Draw() {
 	}()
 }
 
-//Run interface method
-func (tn *TNotifier) Run() int {
-	// app := tn.App
-	// window := tn.App.Window
-	var event sdl.Event
-	for event = sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-		switch t := event.(type) {
-		case *sdl.WindowEvent:
-			if t.Event == sdl.WINDOWEVENT_FOCUS_GAINED {
-				// tn.Draw()
-			}
-			if t.Event == sdl.WINDOWEVENT_FOCUS_LOST {
-				// return 0
-			}
-		case *sdl.QuitEvent:
-			return 0
-		case *sdl.KeyDownEvent:
-			fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%s\tmodifiers:%d\tstate:%d\trepeat:%d\n",
-				t.Timestamp, t.Type, sdl.GetScancodeName(t.Keysym.Scancode), t.Keysym.Mod, t.State, t.Repeat)
-			// key := sdl.GetScancodeName(t.Keysym.Scancode)
-			if t.Keysym.Sym == sdl.K_ESCAPE || t.Keysym.Sym == sdl.K_CAPSLOCK {
-				return 0
-			}
-		}
-	}
+//DispatchEvents interface method
+func (tn *TNotifier) DispatchEvents(event sdl.Event) int {
+	return 1
+}
+
+//DispatchKeys interface method
+func (tn *TNotifier) DispatchKeys(event *sdl.KeyDownEvent) int {
 	return 1
 }

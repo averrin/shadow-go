@@ -64,6 +64,7 @@ func (R *Runner) getExec() []string {
 
 //Init interface method
 func (R *Runner) Init() WidgetSettings {
+	R.Selected = -1
 	app := R.App
 	window := R.App.Window
 	fontSize = 14
@@ -112,107 +113,97 @@ func isASCII(s string) bool {
 	return true
 }
 
-// Run is main mode loop
-func (R *Runner) Run() int {
+// DispatchKeys is main mode loop
+func (R *Runner) DispatchKeys(t *sdl.KeyDownEvent) int {
 	app := R.App
 	T := app.Widget
-	var event sdl.Event
-	for event = sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-		switch t := event.(type) {
-		case *sdl.WindowEvent:
-			if t.Event == sdl.WINDOWEVENT_FOCUS_GAINED {
-				// R.Draw()
-			}
-			if t.Event == sdl.WINDOWEVENT_FOCUS_LOST {
-				// return 0
-			}
-		case *sdl.QuitEvent:
-			return 0
-		case *sdl.KeyDownEvent:
-			fmt.Printf("[%d ms] Keyboard\ttype:%d\tname:%s\tmodifiers:%d\tstate:%d\trepeat:%d\tsym: %c\n",
-				t.Timestamp, t.Type, sdl.GetScancodeName(t.Keysym.Scancode), t.Keysym.Mod, t.State, t.Repeat, t.Keysym.Sym)
-			key := sdl.GetScancodeName(t.Keysym.Scancode)
-			if t.Keysym.Sym == sdl.K_ESCAPE || t.Keysym.Sym == sdl.K_CAPSLOCK {
-				return 0
-			}
-			if (key == "H" && t.Keysym.Mod == 64) || key == "Backspace" {
-				T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
-				T.removeString(1)
-				R.update()
-				return 1
-			}
-			if key == "Delete" {
-				T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
-				T.removeStringForward(1)
-				R.update()
-				return 1
-			}
-			if key == "C" && t.Keysym.Mod == 64 {
-				line := T.Content[0]
-				line.Content = line.Content[:2]
-				T.SetLine(0, line)
-				T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
-				T.MoveCursor(0, 0)
-				return 1
-			}
-			if key == "V" && t.Keysym.Mod == 64 {
-				s, _ := sdl.GetClipboardText()
-				T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
-				T.addString(s)
-				R.update()
-				return 1
-			}
-			if key == "W" && t.Keysym.Mod == 64 {
-				T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
-				T.removeWord()
-				R.update()
-				return 1
-			}
-			if key == "Left" {
-				T.MoveCursorLeft()
-				R.update()
-				return 1
-			}
-			if key == "Right" {
-				T.MoveCursorRight()
-				R.update()
-				return 1
-			}
-			if key == "Down" || (key == "N" && t.Keysym.Mod == 64) {
-				R.next()
-				return 1
-			}
-			if key == "Up" || (key == "P" && t.Keysym.Mod == 64) {
-				R.prev()
-				return 1
-			}
-			if key == "Tab" {
-				R.autocomplete()
-				return 1
-			}
-			if (key == "J" && t.Keysym.Mod == 64) || key == "Return" {
-				ret := execCommand(T.Content[0].Content)
-				if ret != 0 {
-					T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "red", "default"}})
-					T.drawCursor()
-				}
-				return ret
-			}
-			if isASCII(string(t.Keysym.Sym)) && t.Keysym.Mod <= 1 {
-				T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
-				char := string(t.Keysym.Sym)
-				if t.Keysym.Mod == 1 {
-					char = strings.ToUpper(char)
-					if char == "-" {
-						char = "_"
-					}
-				}
-				T.addString(char)
-				R.update()
-				return 1
+	fmt.Printf("[%d ms] Keyboard\ttype:%d\tname:%s\tmodifiers:%d\tstate:%d\trepeat:%d\tsym: %c\n",
+		t.Timestamp, t.Type, sdl.GetScancodeName(t.Keysym.Scancode), t.Keysym.Mod, t.State, t.Repeat, t.Keysym.Sym)
+	key := sdl.GetScancodeName(t.Keysym.Scancode)
+	if t.Keysym.Sym == sdl.K_ESCAPE || t.Keysym.Sym == sdl.K_CAPSLOCK {
+		return 0
+	}
+	if (key == "H" && t.Keysym.Mod == 64) || key == "Backspace" {
+		T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
+		T.removeString(1)
+		R.update()
+		return 1
+	}
+	if key == "Delete" {
+		T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
+		T.removeStringForward(1)
+		R.update()
+		return 1
+	}
+	if key == "C" && t.Keysym.Mod == 64 {
+		line := T.Content[0]
+		line.Content = line.Content[:2]
+		T.SetLine(0, line)
+		T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
+		T.MoveCursor(0, 0)
+		return 1
+	}
+	if key == "V" && t.Keysym.Mod == 64 {
+		s, _ := sdl.GetClipboardText()
+		T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
+		T.addString(s)
+		R.update()
+		return 1
+	}
+	if key == "W" && t.Keysym.Mod == 64 {
+		T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
+		T.removeWord()
+		R.update()
+		return 1
+	}
+	if key == "Left" {
+		T.MoveCursorLeft()
+		R.update()
+		return 1
+	}
+	if key == "Right" {
+		T.MoveCursorRight()
+		R.update()
+		return 1
+	}
+	if key == "Down" || (key == "N" && t.Keysym.Mod == 64) {
+		R.next()
+		return 1
+	}
+	if key == "Up" || (key == "P" && t.Keysym.Mod == 64) {
+		R.prev()
+		return 1
+	}
+	if key == "Tab" {
+		R.autocomplete()
+		return 1
+	}
+	if (key == "J" && t.Keysym.Mod == 64) || key == "Return" {
+		ret := execCommand(T.Content[0].Content)
+		if ret != 0 {
+			T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "red", "default"}})
+			T.drawCursor()
+		}
+		return ret
+	}
+	if isASCII(string(t.Keysym.Sym)) && t.Keysym.Mod <= 1 {
+		T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
+		char := string(t.Keysym.Sym)
+		if t.Keysym.Mod == 1 {
+			char = strings.ToUpper(char)
+			if char == "-" {
+				char = "_"
 			}
 		}
+		T.addString(char)
+		R.update()
+		return 1
 	}
+	return 1
+}
+
+//DispatchEvents interface method
+func (R *Runner) DispatchEvents(event sdl.Event) int {
 	return 1
 }
 
@@ -258,7 +249,7 @@ func (R *Runner) autocomplete() {
 }
 
 func (R *Runner) update() {
-	R.Selected = 0
+	R.Selected = -1
 	T := R.App.Widget
 	line := strings.Split(T.Content[0].Content, " ")[0]
 	items := fuzzy.RankFindFold(line, R.Items)
