@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"strconv"
+	"strings"
 
 	"github.com/BurntSushi/xgb/xproto"
 	"github.com/BurntSushi/xgbutil"
@@ -168,6 +170,19 @@ func (sw *Switcher) DispatchKeys(t *sdl.KeyDownEvent) int {
 		wid := sw.Clients[sw.Selected].WID
 		ewmh.ActiveWindowReq(X, wid)
 		return 0
+	}
+	if strings.Index("0123456789", key) > -1 {
+		i, err := strconv.Atoi(key)
+		if err == nil && len(sw.Clients) > i {
+			sw.Selected = i
+			if t.Keysym.Mod == 64 {
+				wid := sw.Clients[sw.Selected].WID
+				ewmh.ActiveWindowReq(X, wid)
+				return 0
+			}
+			sw.Draw()
+			return 1
+		}
 	}
 	if t.Keysym.Sym == sdl.K_ESCAPE || t.Keysym.Sym == sdl.K_CAPSLOCK {
 		return 0
