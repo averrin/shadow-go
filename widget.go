@@ -40,6 +40,7 @@ type Line struct {
 type Cursor struct {
 	Row    int
 	Column int
+	Hidden bool
 }
 
 // TextWidget is text canvas
@@ -74,7 +75,7 @@ func NewTextWidget(app *Application, renderer *sdl.Renderer, surface *sdl.Surfac
 	widget.Fonts = make(map[string]*ttf.Font)
 	widget.Colors = make(map[string]sdl.Color)
 	widget.Content = make([]Line, 0)
-	widget.Cursor = Cursor{0, 0}
+	widget.Cursor = Cursor{0, 0, false}
 	widget.FontSize = settings.FontSize
 
 	widget.Colors["foreground"] = sdl.Color{
@@ -440,6 +441,9 @@ func (T *TextWidget) removeWord() (int, int) {
 
 // drawCursor is
 func (T *TextWidget) drawCursor() {
+	if T.Cursor.Hidden {
+		return
+	}
 	index := T.Cursor.Row
 	var lw int
 	if T.Cursor.Column > 0 {

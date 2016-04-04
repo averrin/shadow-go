@@ -137,11 +137,17 @@ func newApplication(mode string) *Application {
 	r := new(Runner)
 	r.SetApp(app)
 	app.Modes["runner"] = r
+
+	N := new(Notifier)
+	N.SetApp(app)
+	app.Modes["notify"] = N
 	return app
 }
 
 func main() {
 	mode := flag.String("mode", "tasks", "shadow mode")
+	TITLE = flag.String("title", "Notify", "Notification title")
+	TEXT = flag.String("text", "Notify", "Notification text")
 	flag.Parse()
 	lockPath := path.Join("/tmp", "shadow.lock")
 	if fi, _ := os.Stat(lockPath); fi != nil {

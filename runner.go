@@ -280,7 +280,6 @@ func (R *Runner) update() {
 	for _, item := range R.Suggests {
 		newContent = append(newContent, Line{item, []HighlightRule{}})
 	}
-	log.Println()
 	if len(items) > len(R.Suggests) {
 		newContent = append(newContent, Line{fmt.Sprintf("%d more…", len(items)-12), []HighlightRule{HighlightRule{0, -1, "gray", "default"}}})
 	}
