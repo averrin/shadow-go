@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -56,11 +57,17 @@ func (N *Notifier) Draw() {
 	T := app.Widget
 	T.Reset()
 	T.Cursor.Hidden = true
-	T.SetContent([]Line{
+	content := []Line{
 		Line{*TITLE, []HighlightRule{HighlightRule{0, -1, "highlight", "header"}}},
 		Line{"", []HighlightRule{}},
-		Line{*TEXT, []HighlightRule{}},
-	})
+	}
+	t := strings.Split(*TEXT, "\n")
+	for l := range t {
+		line := strings.TrimSpace(t[l])
+		content = append(content, Line{line, []HighlightRule{}})
+	}
+
+	T.SetContent(content)
 	T.App.DrawMode()
 	// for {
 	// 	ret := <-c
