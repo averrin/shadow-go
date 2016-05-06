@@ -58,8 +58,10 @@ func (tn *TNotifier) Draw() {
 	}
 	go func() {
 		time.Sleep(5 * time.Second)
-		log.Println(os.Remove("/tmp/shadow.lock"))
-		os.Exit(0)
+		if app.Mode == "time" {
+			log.Println(os.Remove("/tmp/shadow.lock"))
+			os.Exit(0)
+		}
 	}()
 }
 
