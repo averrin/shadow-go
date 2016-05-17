@@ -1,0 +1,12 @@
+[submodule "vendor/github.com/BurntSushi/xgb"]
+	path = vendor/github.com/BurntSushi/xgb
+	url = git://github.com/BurntSushi/xgb
+[submodule "vendor/github.com/BurntSushi/xgbutil"]
+	path = vendor/github.com/BurntSushi/xgbutil
+	url = git://github.com/BurntSushi/xgbutil
+[submodule "vendor/github.com/renstrom/fuzzysearch"]
+	path = vendor/github.com/renstrom/fuzzysearch
+	url = git://github.com/renstrom/fuzzysearch
+[submodule "vendor/github.com/veandco/go-sdl2"]
+	path = vendor/github.com/veandco/go-sdl2
+	url = git://github.com/veandco/go-sdl2
