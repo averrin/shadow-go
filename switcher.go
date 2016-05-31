@@ -9,6 +9,7 @@ import (
 	"github.com/BurntSushi/xgb/xproto"
 	"github.com/BurntSushi/xgbutil"
 	"github.com/BurntSushi/xgbutil/ewmh"
+	"github.com/BurntSushi/xgbutil/icccm"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -18,6 +19,7 @@ type Client struct {
 	Name    string
 	Desktop uint
 	Active  bool
+	Class   string
 }
 
 //GetClients get windows list
@@ -44,8 +46,9 @@ func GetClients() []Client {
 			name = ""
 		}
 		desk, _ := ewmh.WmDesktopGet(X, wid)
+		class, _ := icccm.WmClassGet(X, wid)
 		clients = append(clients, Client{
-			wid, name, desk, wid == a,
+			wid, name, desk, wid == a, class.Class,
 		})
 	}
 	return clients
@@ -101,27 +104,50 @@ func (sw *Switcher) Draw() {
 }
 
 func (sw *Switcher) getLine(i int, client Client, focused bool) Line {
+	icons := map[string][]string{}
+	icons["vivaldi-snapshot"] = []string{"\uf27d", "red"}
+	icons["Skype"] = []string{"\uf17e", ACCENT}
+	icons["konsole"] = []string{"\uf120", "default"}
+	icons["Thunderbird"] = []string{"\uf0e0", "default"}
+	icons["Atom"] = []string{"\ue7ba", "default"}
+	icons["yakyak"] = []string{"\uf086", GREEN}
 	app := sw.App
 	T := app.Widget
 	var line string
 	var n string
+	var d string
 	var ret Line
 	if i < 10 {
 		n = fmt.Sprintf("%d", i)
 	} else {
 		n = " "
 	}
+	t := client.Name
+	d = strconv.Itoa(int(client.Desktop))
+	var rules []HighlightRule
 	if !focused {
-		line = fmt.Sprintf("  %s [%d] %s", n, client.Desktop, client.Name)
+		rules = []HighlightRule{
+			HighlightRule{5, 1, "orange", "default"},
+		}
+		line = fmt.Sprintf("  %s [%s] %s", n, d, t)
+		icon, hasIcon := icons[client.Class]
+		if hasIcon {
+			rules = []HighlightRule{
+				HighlightRule{4, 3, icon[1], "default"},
+			}
+			line = fmt.Sprintf("  %s %s  %s", n, icon[0], t)
+		}
 		line = T.StripLine(line, "default")
 		ret = Line{
 			line,
-			[]HighlightRule{
-				HighlightRule{5, 1, "orange", "default"},
-			},
+			rules,
 		}
 	} else {
-		line = fmt.Sprintf("| %s [%d] %s", n, client.Desktop, client.Name)
+		line = fmt.Sprintf("| %s [%s] %s", n, d, t)
+		icon, hasIcon := icons[client.Class]
+		if hasIcon {
+			line = fmt.Sprintf("  %s %s  %s", n, icon[0], t)
+		}
 		line = T.StripLine(line, "bold")
 		ret = Line{line,
 			[]HighlightRule{

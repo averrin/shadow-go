@@ -450,7 +450,7 @@ func (T *TextWidget) drawCursor() {
 		line := T.Content[index].Content[:T.Cursor.Column-1]
 		lw, _, _ = T.Fonts["default"].SizeUTF8(line)
 	} else {
-		lw = -10
+		lw = -5
 	}
 	rect := sdl.Rect{
 		X: T.Padding.Left - 3,
@@ -460,12 +460,12 @@ func (T *TextWidget) drawCursor() {
 	}
 	T.Surface.FillRect(&rect, T.BG)
 	r := sdl.Rect{
-		X: T.Padding.Left + int32(lw) + 5,
+		X: T.Padding.Left + int32(lw) + 8,
 		Y: T.Padding.Top + int32(index*T.LineHeight),
-		W: int32(5),
+		W: int32(8),
 		H: int32(T.LineHeight),
 	}
-	T.DrawColoredText("|", &r, "orange", "default", []HighlightRule{})
+	T.DrawColoredText("_", &r, "orange", "default", []HighlightRule{})
 	T.Renderer.Present()
 	T.App.Window.UpdateSurface()
 }
@@ -475,4 +475,5 @@ func (T *TextWidget) SetRules(index int, rules []HighlightRule) {
 	line := T.Content[index]
 	line.Rules = rules
 	T.SetLine(index, line)
+	T.drawCursor()
 }
