@@ -47,8 +47,15 @@ func stringInSlice(a string, list []string) bool {
 	return false
 }
 
+func reverse(arr []string) []string {
+	for i, j := 0, len(arr)-1; i < j; i, j = i+1, j-1 {
+		arr[i], arr[j] = arr[j], arr[i]
+	}
+	return arr
+}
+
 func (R *Runner) getExec() []string {
-	ret := R.History
+	ret := reverse(R.History)
 	pathes := strings.Split(os.Getenv("PATH"), ":")
 	for _, path := range pathes {
 		fi, _ := ioutil.ReadDir(path)

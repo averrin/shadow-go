@@ -13,6 +13,8 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+var icons map[string][]string
+
 //Client struct
 type Client struct {
 	WID     xproto.Window
@@ -82,13 +84,22 @@ func (sw *Switcher) Init() WidgetSettings {
 	sw.Clients = GetClients()
 	fontSize = 14
 	w := 500
-	h := (fontSize + 10) * len(sw.Clients)
+	h := (fontSize + 12) * len(sw.Clients)
 	window, err := sdl.CreateWindow("Shadow", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
 		w, h, sdl.WINDOW_SHOWN)
 	if err != nil {
 		panic(err)
 	}
 	app.Window = window
+
+	icons = map[string][]string{}
+	icons["vivaldi-snapshot"] = []string{"\uf27d", "red"}
+	icons["Skype"] = []string{"\uf17e", ACCENT}
+	icons["konsole"] = []string{"\uf120", "default"}
+	icons["Thunderbird"] = []string{"\uf0e0", "default"}
+	icons["Atom"] = []string{"\ue7ba", "default"}
+	icons["yakyak"] = []string{"\uf086", GREEN}
+
 	return WidgetSettings{fontSize, Geometry{int32(w), int32(h)}, Padding{10, 10, 10}}
 }
 
@@ -104,13 +115,7 @@ func (sw *Switcher) Draw() {
 }
 
 func (sw *Switcher) getLine(i int, client Client, focused bool) Line {
-	icons := map[string][]string{}
-	icons["vivaldi-snapshot"] = []string{"\uf27d", "red"}
-	icons["Skype"] = []string{"\uf17e", ACCENT}
-	icons["konsole"] = []string{"\uf120", "default"}
-	icons["Thunderbird"] = []string{"\uf0e0", "default"}
-	icons["Atom"] = []string{"\ue7ba", "default"}
-	icons["yakyak"] = []string{"\uf086", GREEN}
+	// return Line{client.Name, []HighlightRule{}}
 	app := sw.App
 	T := app.Widget
 	var line string
@@ -123,19 +128,20 @@ func (sw *Switcher) getLine(i int, client Client, focused bool) Line {
 		n = " "
 	}
 	t := client.Name
-	d = strconv.Itoa(int(client.Desktop))
+	icon, hasIcon := icons[client.Class]
 	var rules []HighlightRule
 	if !focused {
-		rules = []HighlightRule{
-			HighlightRule{5, 1, "orange", "default"},
-		}
-		line = fmt.Sprintf("  %s [%s] %s", n, d, t)
-		icon, hasIcon := icons[client.Class]
 		if hasIcon {
 			rules = []HighlightRule{
 				HighlightRule{4, 3, icon[1], "default"},
 			}
 			line = fmt.Sprintf("  %s %s  %s", n, icon[0], t)
+		} else {
+			rules = []HighlightRule{
+				HighlightRule{5, 1, "orange", "default"},
+			}
+			d = strconv.Itoa(int(client.Desktop))
+			line = fmt.Sprintf("  %s [%s] %s", n, d, t)
 		}
 		line = T.StripLine(line, "default")
 		ret = Line{
@@ -143,10 +149,11 @@ func (sw *Switcher) getLine(i int, client Client, focused bool) Line {
 			rules,
 		}
 	} else {
-		line = fmt.Sprintf("| %s [%s] %s", n, d, t)
-		icon, hasIcon := icons[client.Class]
 		if hasIcon {
 			line = fmt.Sprintf("  %s %s  %s", n, icon[0], t)
+		} else {
+			d = strconv.Itoa(int(client.Desktop))
+			line = fmt.Sprintf("| %s [%s] %s", n, d, t)
 		}
 		line = T.StripLine(line, "bold")
 		ret = Line{line,

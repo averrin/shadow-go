@@ -118,29 +118,22 @@ func (app *Application) run() int {
 			}
 		}
 	}
-	log.Println(os.Remove("/tmp/shadow.lock"))
+	os.Remove("/tmp/shadow.lock")
 	return 0
 }
 
 func newApplication(mode string) *Application {
 	app := new(Application)
 	app.Mode = mode
-	app.Modes = make(map[string]Mode)
-	sw := new(Switcher)
-	sw.SetApp(app)
-	app.Modes["tasks"] = sw
-
-	tn := new(TNotifier)
-	tn.SetApp(app)
-	app.Modes["time"] = tn
-
-	r := new(Runner)
-	r.SetApp(app)
-	app.Modes["runner"] = r
-
-	N := new(Notifier)
-	N.SetApp(app)
-	app.Modes["notify"] = N
+	app.Modes = map[string]Mode{
+		"tasks":  new(Switcher),
+		"time":   new(TNotifier),
+		"runner": new(Runner),
+		"notify": new(Notifier),
+	}
+	for _, mode := range app.Modes {
+		mode.SetApp(app)
+	}
 	return app
 }
 

@@ -187,7 +187,7 @@ func (T *TextWidget) AddLine(line Line) {
 		line.Rules,
 	)
 	// T.Renderer.Clear()
-	T.Renderer.Present()
+	// T.Renderer.Present()
 	// sdl.Delay(1)
 	T.App.Window.UpdateSurface()
 }
