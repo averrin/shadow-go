@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"os/exec"
 	"strings"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -89,13 +90,13 @@ func (U *Ultra) DispatchKeys(t *sdl.KeyDownEvent) int {
 	if (key == "H" && t.Keysym.Mod == 64) || key == "Backspace" {
 		T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
 		T.removeString(1)
-		// R.update()
+		U.update()
 		return 1
 	}
 	if key == "Delete" {
 		T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
 		T.removeStringForward(1)
-		// R.update()
+		U.update()
 		return 1
 	}
 	if key == "C" && t.Keysym.Mod == 64 {
@@ -110,23 +111,23 @@ func (U *Ultra) DispatchKeys(t *sdl.KeyDownEvent) int {
 		s, _ := sdl.GetClipboardText()
 		T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
 		T.addString(s)
-		// R.update()
+		U.update()
 		return 1
 	}
 	if key == "W" && t.Keysym.Mod == 64 {
 		T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
 		T.removeWord()
-		// R.update()
+		U.update()
 		return 1
 	}
 	if key == "Left" {
 		T.MoveCursorLeft()
-		// R.update()
+		U.update()
 		return 1
 	}
 	if key == "Right" {
 		T.MoveCursorRight()
-		// R.update()
+		U.update()
 		return 1
 	}
 	// if key == "Down" || (key == "N" && t.Keysym.Mod == 64) {
@@ -141,7 +142,7 @@ func (U *Ultra) DispatchKeys(t *sdl.KeyDownEvent) int {
 	// 	R.autocomplete()
 	// 	return 1
 	// }
-	if (key == "J" && t.Keysym.Mod == 64) || key == "Return" {
+	if (key == "J" && t.Keysym.Mod == 64) || t.Keysym.Sym == sdl.K_RETURN {
 		ret := execInput(T.Content[0].Content)
 		if ret != 0 {
 			T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "red", "default"}})
@@ -167,10 +168,14 @@ func (U *Ultra) DispatchKeys(t *sdl.KeyDownEvent) int {
 			}
 		}
 		T.addString(char)
-		// R.update()
+		U.update()
 		return 1
 	}
 	return 1
+}
+
+func (U *Ultra) update() {
+	return
 }
 
 func execInput(line string) int {
@@ -178,6 +183,7 @@ func execInput(line string) int {
 		"g":  searchInGoogle,
 		"w":  searchInWiki,
 		"gh": searchInGH,
+		"m":  searchInMusic,
 		"!":  execCommand,
 	}
 	log.Println(line)
@@ -192,13 +198,30 @@ func execInput(line string) int {
 }
 
 func searchInGoogle(q string) int {
-	return execCommand("xdg-open https://www.google.com/search?q=" + q)
+	url := fmt.Sprintf("https://www.google.com/search?q=%s", q)
+	return openURL(url)
 }
 
 func searchInWiki(q string) int {
-	return execCommand("xdg-open https://en.wikipedia.org/wiki/Special:Search/" + q)
+	url := fmt.Sprintf("https://en.wikipedia.org/wiki/Special:Search/%s", q)
+	return openURL(url)
 }
 
 func searchInGH(q string) int {
-	return execCommand("xdg-open https://github.com/search?utf8=✓&q=" + q)
+	url := fmt.Sprintf("https://github.com/search?utf8=✓&q=%s", q)
+	return openURL(url)
+}
+
+func searchInMusic(q string) int {
+	url := fmt.Sprintf("https://play.google.com/music/listen#/sr/%s", q)
+	return openURL(url)
+}
+
+func openURL(url string) int {
+	c := exec.Command("xdg-open", url)
+	err := c.Start()
+	if err != nil {
+		return 1
+	}
+	return 0
 }
