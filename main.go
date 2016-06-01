@@ -130,6 +130,7 @@ func newApplication(mode string) *Application {
 		"time":   new(TNotifier),
 		"runner": new(Runner),
 		"notify": new(Notifier),
+		"ultra":  new(Ultra),
 	}
 	for _, mode := range app.Modes {
 		mode.SetApp(app)

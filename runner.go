@@ -91,8 +91,6 @@ func (R *Runner) Init() WidgetSettings {
 
 //Draw interface method
 func (R *Runner) Draw() {
-	c := make(chan Line)
-	go GetTime(c)
 	app := R.App
 	T := app.Widget
 	T.Reset()
