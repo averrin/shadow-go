@@ -149,11 +149,14 @@ func NewTextWidget(app *Application, renderer *sdl.Renderer, surface *sdl.Surfac
 
 // SetContent is
 func (T *TextWidget) SetContent(content []Line) {
-	log.Println(T.Content)
-	log.Println(content)
 	// T.Content = content
 	// T.Update()
 	l := len(T.Content)
+	if l > len(content) {
+		T.Content = content
+		T.Update()
+		return
+	}
 	for i := range content {
 		if i < l {
 			T.ChangeLine(i, content[i])
@@ -170,7 +173,6 @@ func (T *TextWidget) ChangeLine(index int, new Line) {
 	a := strings.HasPrefix(old.Content, new.Content)
 	b := strings.HasPrefix(new.Content, old.Content)
 	same := sameRules && len(new.Content) > 0 && len(old.Content) > 0 && (a || b)
-	log.Println(old.Content, new.Content, same)
 	if same {
 		w := T.Geometry.Width
 		i := math.Min(float64(len(new.Content)), float64(len(old.Content)))
@@ -192,7 +194,6 @@ func (T *TextWidget) ChangeLine(index int, new Line) {
 		}
 		T.Content[index] = new
 		T.Surface.FillRect(&r, T.BG)
-		log.Println(newLine[int(i):len(newLine)])
 		T.DrawColoredText(newLine[int(i):len(newLine)],
 			&r, "foreground", "default",
 			// []HighlightRule{HighlightRule{0, -1, "red", "default"}},
@@ -208,7 +209,6 @@ func (T *TextWidget) ChangeLine(index int, new Line) {
 
 // SetLine is
 func (T *TextWidget) SetLine(index int, line Line) {
-	log.Println("SetLine", index)
 	w := T.Geometry.Width
 	// h := T.Geometry.Height
 	r := sdl.Rect{
@@ -477,7 +477,7 @@ func (T *TextWidget) removeStringForward(n int) (int, int) {
 	if i+n > len(line.Content) {
 		n = len(line.Content) - i
 	}
-	if i > 0 {
+	if i >= 0 {
 		line.Content = line.Content[:i] + line.Content[i+n:]
 		T.ChangeLine(0, line)
 		T.MoveCursor(T.Cursor.Row, T.Cursor.Column)
@@ -488,7 +488,7 @@ func (T *TextWidget) removeStringForward(n int) (int, int) {
 // removeWord is
 func (T *TextWidget) removeWord() (int, int) {
 	log.Println(T.Cursor.Column)
-	if T.Cursor.Column > 0 {
+	if T.Cursor.Column >= 0 {
 		index := T.Cursor.Row
 		line := T.Content[index].Content[:T.Cursor.Column-1]
 		n := strings.LastIndexAny(line, " -;") + 1
@@ -508,7 +508,7 @@ func (T *TextWidget) drawCursor() {
 		line := T.Content[index].Content[:T.Cursor.Column-1]
 		lw, _, _ = T.Fonts["default"].SizeUTF8(line)
 	} else {
-		lw = -5
+		lw = -7
 	}
 	rect := sdl.Rect{
 		X: T.Padding.Left - 3,
@@ -523,6 +523,7 @@ func (T *TextWidget) drawCursor() {
 		W: int32(8),
 		H: int32(T.LineHeight),
 	}
+	T.SetLine(index, T.Content[index])
 	T.DrawColoredText("_", &r, "orange", "default", []HighlightRule{})
 	T.Renderer.Present()
 	T.App.Window.UpdateSurface()

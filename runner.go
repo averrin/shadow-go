@@ -258,7 +258,6 @@ func (R *Runner) autocomplete() {
 func (R *Runner) update() {
 	R.Selected = -1
 	T := R.App.Widget
-	log.Println(">", T.Content)
 	line := strings.Split(T.Content[0].Content, " ")[0]
 	items := fuzzy.RankFindFold(line, R.Items)
 	end := 12
@@ -294,22 +293,22 @@ func (R *Runner) update() {
 		newContent = append(newContent, Line{fmt.Sprintf("%d more…", len(items)-12), []HighlightRule{HighlightRule{0, -1, "gray", "default"}}})
 	}
 	T.SetContent(newContent)
-	if len(R.Suggests) == 1 {
-		first := R.Suggests[0]
-		if line != first && line == first[:len(line)] && len(strings.Split(T.Content[0].Content, " ")) == 1 {
-			suggest := first[len(line):]
-			ll, _, _ := T.Fonts["default"].SizeUTF8(line)
-			sl, _, _ := T.Fonts["default"].SizeUTF8(suggest)
-			r := sdl.Rect{
-				X: T.Padding.Left + int32(ll),
-				Y: T.Padding.Top,
-				W: int32(sl),
-				H: int32(T.LineHeight),
-			}
-			T.DrawColoredText(suggest, &r, "gray", "default", []HighlightRule{})
-			T.Show()
+	// if len(R.Suggests) == 1 {
+	first := R.Suggests[0]
+	if line != first && len(first) > len(line) && line == first[:len(line)] && len(strings.Split(T.Content[0].Content, " ")) == 1 {
+		suggest := first[len(line):]
+		ll, _, _ := T.Fonts["default"].SizeUTF8(line)
+		sl, _, _ := T.Fonts["default"].SizeUTF8(suggest)
+		r := sdl.Rect{
+			X: T.Padding.Left + int32(ll),
+			Y: T.Padding.Top,
+			W: int32(sl),
+			H: int32(T.LineHeight),
 		}
+		T.DrawColoredText(suggest, &r, "gray", "default", []HighlightRule{})
+		T.Show()
 	}
+	// }
 	// T.SetRules(R.Selected+1, []HighlightRule{HighlightRule{0, -1, "highlight", "bold"}})
 }
 
