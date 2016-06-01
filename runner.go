@@ -293,7 +293,6 @@ func (R *Runner) update() {
 		newContent = append(newContent, Line{fmt.Sprintf("%d more…", len(items)-12), []HighlightRule{HighlightRule{0, -1, "gray", "default"}}})
 	}
 	T.SetContent(newContent)
-	// if len(R.Suggests) == 1 {
 	first := R.Suggests[0]
 	if line != first && len(first) > len(line) && line == first[:len(line)] && len(strings.Split(T.Content[0].Content, " ")) == 1 {
 		suggest := first[len(line):]
@@ -306,10 +305,7 @@ func (R *Runner) update() {
 			H: int32(T.LineHeight),
 		}
 		T.DrawColoredText(suggest, &r, "gray", "default", []HighlightRule{})
-		T.Show()
 	}
-	// }
-	// T.SetRules(R.Selected+1, []HighlightRule{HighlightRule{0, -1, "highlight", "bold"}})
 }
 
 func execCommand(cmd string) int {
