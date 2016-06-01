@@ -144,10 +144,10 @@ func (R *Runner) DispatchKeys(t *sdl.KeyDownEvent) int {
 	}
 	if key == "C" && t.Keysym.Mod == 64 {
 		line := T.Content[0]
-		line.Content = line.Content[:2]
-		T.SetLine(0, line)
-		T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
 		T.MoveCursor(0, 0)
+		line.Content = ""
+		T.ChangeLine(0, line)
+		T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
 		return 1
 	}
 	if key == "V" && t.Keysym.Mod == 64 {
@@ -222,7 +222,7 @@ func (R *Runner) next() {
 		R.Selected = 0
 	}
 	T.SetRules(R.Selected+1, []HighlightRule{HighlightRule{0, -1, "highlight", "bold"}})
-	T.SetLine(0, Line{R.Suggests[R.Selected], []HighlightRule{HighlightRule{0, -1, GREEN, "default"}}})
+	T.ChangeLine(0, Line{R.Suggests[R.Selected], []HighlightRule{HighlightRule{0, -1, GREEN, "default"}}})
 	T.MoveCursor(0, len(R.Suggests[R.Selected]))
 }
 
@@ -234,7 +234,7 @@ func (R *Runner) prev() {
 	}
 	R.Selected--
 	T.SetRules(R.Selected+1, []HighlightRule{HighlightRule{0, -1, "highlight", "bold"}})
-	T.SetLine(0, Line{R.Suggests[R.Selected], []HighlightRule{HighlightRule{0, -1, GREEN, "default"}}})
+	T.ChangeLine(0, Line{R.Suggests[R.Selected], []HighlightRule{HighlightRule{0, -1, GREEN, "default"}}})
 	T.MoveCursor(0, len(R.Suggests[R.Selected]))
 }
 
@@ -249,7 +249,7 @@ func (R *Runner) autocomplete() {
 		if len(tokens) > 1 {
 			line += " " + strings.Join(tokens[1:], " ")
 		}
-		T.SetLine(0, Line{line, []HighlightRule{HighlightRule{0, len(line), GREEN, "default"}}})
+		T.ChangeLine(0, Line{line, []HighlightRule{HighlightRule{0, len(line), GREEN, "default"}}})
 		T.MoveCursor(0, len(line))
 		R.update()
 	}
@@ -258,6 +258,7 @@ func (R *Runner) autocomplete() {
 func (R *Runner) update() {
 	R.Selected = -1
 	T := R.App.Widget
+	log.Println(">", T.Content)
 	line := strings.Split(T.Content[0].Content, " ")[0]
 	items := fuzzy.RankFindFold(line, R.Items)
 	end := 12
@@ -283,7 +284,9 @@ func (R *Runner) update() {
 			}
 		}
 	}
-	newContent := T.Content[:1]
+	tmp := make([]Line, len(T.Content))
+	copy(tmp, T.Content)
+	newContent := tmp[:1]
 	for _, item := range R.Suggests {
 		newContent = append(newContent, Line{item, []HighlightRule{}})
 	}
@@ -307,7 +310,7 @@ func (R *Runner) update() {
 			T.Show()
 		}
 	}
-	T.SetRules(R.Selected+1, []HighlightRule{HighlightRule{0, -1, "highlight", "bold"}})
+	// T.SetRules(R.Selected+1, []HighlightRule{HighlightRule{0, -1, "highlight", "bold"}})
 }
 
 func execCommand(cmd string) int {

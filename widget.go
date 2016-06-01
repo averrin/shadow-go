@@ -2,9 +2,11 @@ package main
 
 import (
 	"log"
+	"math"
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -52,6 +54,7 @@ type TextWidget struct {
 	Fonts      map[string]*ttf.Font
 	Colors     map[string]sdl.Color
 	BG         uint32
+	DEBUG      uint32
 	Content    []Line
 	LineHeight int
 	Geometry
@@ -137,6 +140,7 @@ func NewTextWidget(app *Application, renderer *sdl.Renderer, surface *sdl.Surfac
 	widget.Fonts["bigger"] = bigger
 
 	widget.BG = 0xff242424
+	widget.DEBUG = 0xffff2424
 	widget.LineHeight = widget.FontSize + 6
 	widget.Geometry = settings.Geometry
 	widget.Padding = settings.Padding
@@ -145,12 +149,66 @@ func NewTextWidget(app *Application, renderer *sdl.Renderer, surface *sdl.Surfac
 
 // SetContent is
 func (T *TextWidget) SetContent(content []Line) {
-	T.Content = content
-	T.Update()
+	log.Println(T.Content)
+	log.Println(content)
+	// T.Content = content
+	// T.Update()
+	l := len(T.Content)
+	for i := range content {
+		if i < l {
+			T.ChangeLine(i, content[i])
+		} else {
+			T.AddLine(content[i])
+		}
+	}
+}
+
+// ChangeLine is
+func (T *TextWidget) ChangeLine(index int, new Line) {
+	old := T.Content[index]
+	sameRules := reflect.DeepEqual(old.Rules, new.Rules)
+	a := strings.HasPrefix(old.Content, new.Content)
+	b := strings.HasPrefix(new.Content, old.Content)
+	same := sameRules && len(new.Content) > 0 && len(old.Content) > 0 && (a || b)
+	log.Println(old.Content, new.Content, same)
+	if same {
+		w := T.Geometry.Width
+		i := math.Min(float64(len(new.Content)), float64(len(old.Content)))
+		var line string
+		var newLine string
+		if a {
+			line = new.Content
+			newLine = old.Content
+		} else {
+			line = old.Content
+			newLine = new.Content
+		}
+		padding, _, _ := T.Fonts["default"].SizeUTF8(line)
+		r := sdl.Rect{
+			X: T.Padding.Left + int32(padding),
+			Y: T.Padding.Top + int32(index*T.LineHeight),
+			W: int32(w),
+			H: int32(T.LineHeight),
+		}
+		T.Content[index] = new
+		T.Surface.FillRect(&r, T.BG)
+		log.Println(newLine[int(i):len(newLine)])
+		T.DrawColoredText(newLine[int(i):len(newLine)],
+			&r, "foreground", "default",
+			// []HighlightRule{HighlightRule{0, -1, "red", "default"}},
+			new.Rules,
+		)
+		T.Renderer.Present()
+		T.App.Window.UpdateSurface()
+
+	} else {
+		T.SetLine(index, new)
+	}
 }
 
 // SetLine is
 func (T *TextWidget) SetLine(index int, line Line) {
+	log.Println("SetLine", index)
 	w := T.Geometry.Width
 	// h := T.Geometry.Height
 	r := sdl.Rect{
@@ -224,8 +282,8 @@ func (T *TextWidget) Update() {
 
 	T.App.DrawMode()
 	T.drawCursor()
-	T.Renderer.Clear()
-	T.Renderer.Present()
+	// T.Renderer.Clear()
+	// T.Renderer.Present()
 	sdl.Delay(5)
 	T.App.Window.UpdateSurface()
 }
@@ -394,7 +452,7 @@ func (T *TextWidget) addString(s string) (int, int) {
 	line := T.Content[T.Cursor.Row]
 	i := T.Cursor.Column
 	line.Content = line.Content[:i] + s + line.Content[i:]
-	T.SetLine(0, line)
+	T.ChangeLine(0, line)
 	T.MoveCursor(T.Cursor.Row, T.Cursor.Column+len(s))
 	return T.Cursor.Row, T.Cursor.Column
 }
@@ -405,7 +463,7 @@ func (T *TextWidget) removeString(n int) (int, int) {
 		line := T.Content[T.Cursor.Row]
 		i := T.Cursor.Column
 		line.Content = line.Content[:i-n] + line.Content[i:]
-		T.SetLine(0, line)
+		T.ChangeLine(0, line)
 		T.MoveCursor(T.Cursor.Row, T.Cursor.Column-n)
 	}
 	return T.Cursor.Row, T.Cursor.Column
@@ -421,7 +479,7 @@ func (T *TextWidget) removeStringForward(n int) (int, int) {
 	}
 	if i > 0 {
 		line.Content = line.Content[:i] + line.Content[i+n:]
-		T.SetLine(0, line)
+		T.ChangeLine(0, line)
 		T.MoveCursor(T.Cursor.Row, T.Cursor.Column)
 	}
 	return T.Cursor.Row, T.Cursor.Column
@@ -474,6 +532,6 @@ func (T *TextWidget) drawCursor() {
 func (T *TextWidget) SetRules(index int, rules []HighlightRule) {
 	line := T.Content[index]
 	line.Rules = rules
-	T.SetLine(index, line)
+	T.ChangeLine(index, line)
 	T.drawCursor()
 }
