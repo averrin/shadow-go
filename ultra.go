@@ -3,19 +3,25 @@ package main
 import (
 	"fmt"
 	"log"
-	"math"
-	"os/exec"
 	"strings"
 
 	"github.com/veandco/go-sdl2/sdl"
 )
+
+//Command interface
+type Command interface {
+	Init()
+	Test(string) bool
+	GetText(string) string
+	Exec(string) int
+}
 
 //Ultra mode
 type Ultra struct {
 	App      *Application
 	Alias    string
 	History  []string
-	Items    []string
+	Items    []Command
 	Suggests []string
 	Selected int
 }
@@ -46,8 +52,19 @@ func (U *Ultra) Init() WidgetSettings {
 	}
 	app.Window = window
 	// U.History = readExec()
-	// U.Items = U.getExec()
+	search := new(SearchCommand)
+	search.Init()
+	run := new(RunCommand)
+	run.Init()
+	session := new(SessionCommand)
+	session.Init()
+	U.Items = []Command{
+		search,
+		run,
+		session,
+	}
 	// U.Suggests = U.Items[:12]
+
 	return WidgetSettings{fontSize, Geometry{int32(w), int32(h)}, Padding{10, 30, 10}}
 }
 
@@ -66,10 +83,10 @@ func (U *Ultra) Draw() {
 	T.DrawColoredText("\uf054", &r, ACCENT, "bold", []HighlightRule{})
 	T.AddLine(Line{"", []HighlightRule{}})
 	T.MoveCursor(0, 0)
-	b := math.Min(float64(len(U.Items)), float64(12))
-	for _, e := range U.Items[:int(b)] {
-		T.AddLine(Line{e, []HighlightRule{}})
-	}
+	// b := math.Min(float64(len(U.Items)), float64(12))
+	// for _, e := range U.Items[:int(b)] {
+	// 	T.AddLine(Line{e.GetText(""), []HighlightRule{}})
+	// }
 }
 
 //DispatchEvents interface method
@@ -143,7 +160,7 @@ func (U *Ultra) DispatchKeys(t *sdl.KeyDownEvent) int {
 	// 	return 1
 	// }
 	if (key == "J" && t.Keysym.Mod == 64) || t.Keysym.Sym == sdl.K_RETURN {
-		ret := execInput(T.Content[0].Content)
+		ret := U.execInput(T.Content[0].Content)
 		if ret != 0 {
 			T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "red", "default"}})
 			T.drawCursor()
@@ -156,6 +173,8 @@ func (U *Ultra) DispatchKeys(t *sdl.KeyDownEvent) int {
 		";": ";",
 		"1": "!",
 		"2": "@",
+		"3": "#",
+		"4": "$",
 	}
 	if isASCII(string(t.Keysym.Sym)) && t.Keysym.Mod <= 1 {
 		T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
@@ -175,53 +194,24 @@ func (U *Ultra) DispatchKeys(t *sdl.KeyDownEvent) int {
 }
 
 func (U *Ultra) update() {
-	return
+	app := U.App
+	T := app.Widget
+	line := T.Content[0].Content
+	for n := range U.Items {
+		if U.Items[n].Test(line) {
+			T.ChangeLine(1, Line{U.Items[n].GetText(line), []HighlightRule{}})
+			return
+		}
+	}
+	T.ChangeLine(1, Line{"No results...", []HighlightRule{HighlightRule{0, -1, "gray", "default"}}})
 }
 
-func execInput(line string) int {
-	mapping := map[string]func(string) int{
-		"g":  searchInGoogle,
-		"w":  searchInWiki,
-		"gh": searchInGH,
-		"m":  searchInMusic,
-		"!":  execCommand,
-	}
+func (U *Ultra) execInput(line string) int {
 	log.Println(line)
-	for p := range mapping {
-		if strings.HasPrefix(line, p+" ") {
-			ret := mapping[p](line[len(p)+1:])
-			log.Println(p, ret)
-			return ret
+	for n := range U.Items {
+		if U.Items[n].Test(line) {
+			return U.Items[n].Exec(line)
 		}
 	}
 	return 1
-}
-
-func searchInGoogle(q string) int {
-	url := fmt.Sprintf("https://www.google.com/search?q=%s", q)
-	return openURL(url)
-}
-
-func searchInWiki(q string) int {
-	url := fmt.Sprintf("https://en.wikipedia.org/wiki/Special:Search/%s", q)
-	return openURL(url)
-}
-
-func searchInGH(q string) int {
-	url := fmt.Sprintf("https://github.com/search?utf8=✓&q=%s", q)
-	return openURL(url)
-}
-
-func searchInMusic(q string) int {
-	url := fmt.Sprintf("https://play.google.com/music/listen#/sr/%s", q)
-	return openURL(url)
-}
-
-func openURL(url string) int {
-	c := exec.Command("xdg-open", url)
-	err := c.Start()
-	if err != nil {
-		return 1
-	}
-	return 0
 }

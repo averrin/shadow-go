@@ -168,6 +168,10 @@ func (T *TextWidget) SetContent(content []Line) {
 
 // ChangeLine is
 func (T *TextWidget) ChangeLine(index int, new Line) {
+	if index >= len(T.Content) {
+		T.AddLine(new)
+		return
+	}
 	old := T.Content[index]
 	sameRules := reflect.DeepEqual(old.Rules, new.Rules)
 	a := strings.HasPrefix(old.Content, new.Content)
