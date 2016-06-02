@@ -197,6 +197,7 @@ func (U *Ultra) update() {
 	app := U.App
 	T := app.Widget
 	line := T.Content[0].Content
+	log.Println(line)
 	for n := range U.Items {
 		if U.Items[n].Test(line) {
 			T.ChangeLine(1, Line{U.Items[n].GetText(line), []HighlightRule{}})

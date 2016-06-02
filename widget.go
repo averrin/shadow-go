@@ -184,11 +184,12 @@ func (T *TextWidget) ChangeLine(index int, new Line) {
 		var newLine string
 		if a {
 			line = new.Content
-			newLine = old.Content
+			newLine = new.Content
 		} else {
 			line = old.Content
 			newLine = new.Content
 		}
+		log.Println(line, newLine)
 		padding, _, _ := T.Fonts["default"].SizeUTF8(line)
 		r := sdl.Rect{
 			X: T.Padding.Left + int32(padding),
