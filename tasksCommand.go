@@ -37,11 +37,11 @@ func (Cmd *TasksCommand) GetText(line string) string {
 	return fmt.Sprintf("Switch to %s", line)
 }
 
-func (Cmd *TasksCommand) GetSuggests(line string) []string {
-	s := []string{}
+func (Cmd *TasksCommand) GetSuggests(line string) []AutocompleteItem {
+	s := []AutocompleteItem{}
 	for c := range Cmd.Mapping {
 		if strings.HasPrefix(c, line) {
-			s = append(s, c)
+			s = append(s, AutocompleteItem{Cmd, c})
 		}
 	}
 	return s

@@ -492,7 +492,7 @@ func (T *TextWidget) removeStringForward(n int) (int, int) {
 // removeWord is
 func (T *TextWidget) removeWord() (int, int) {
 	log.Println(T.Cursor.Column)
-	if T.Cursor.Column >= 0 {
+	if T.Cursor.Column > 0 {
 		index := T.Cursor.Row
 		line := T.Content[index].Content[:T.Cursor.Column-1]
 		n := strings.LastIndexAny(line, " -;") + 1

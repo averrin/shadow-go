@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os/exec"
 	"strings"
 )
@@ -39,6 +40,7 @@ func (Cmd *SearchCommand) Exec(line string) int {
 
 func (Cmd *SearchCommand) GetText(line string) string {
 	p := Cmd.getPrefix(line)
+	log.Println(p, line)
 	mapping := map[string]string{
 		"g":  "Google",
 		"w":  "Wiki",
@@ -78,6 +80,11 @@ func openURL(url string) int {
 	return 0
 }
 
-func (Cmd *SearchCommand) GetSuggests(line string) []string {
-	return []string{}
+func (Cmd *SearchCommand) GetSuggests(line string) []AutocompleteItem {
+	p := Cmd.getPrefix(line)
+	s := []AutocompleteItem{}
+	if p != "" {
+		s = append(s, AutocompleteItem{Cmd, line})
+	}
+	return s
 }

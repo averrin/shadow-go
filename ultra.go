@@ -13,7 +13,13 @@ type Command interface {
 	Test(string) bool
 	GetText(string) string
 	Exec(string) int
-	GetSuggests(string) []string
+	GetSuggests(string) []AutocompleteItem
+}
+
+//AutocompleteItem is
+type AutocompleteItem struct {
+	Command Command
+	Text    string
 }
 
 //Ultra mode
@@ -22,7 +28,7 @@ type Ultra struct {
 	Alias    string
 	History  []string
 	Items    []Command
-	Suggests []string
+	Suggests []AutocompleteItem
 	Selected int
 }
 
@@ -195,7 +201,8 @@ func (U *Ultra) DispatchKeys(t *sdl.KeyDownEvent) int {
 func (U *Ultra) autocomplete() {
 	app := U.App
 	T := app.Widget
-	T.ChangeLine(0, Line{U.Suggests[0], []HighlightRule{HighlightRule{0, -1, GREEN, "default"}}})
+	T.ChangeLine(0, Line{U.Suggests[0].Text, []HighlightRule{HighlightRule{0, -1, GREEN, "default"}}})
+	T.MoveCursor(0, len(U.Suggests[0].Text))
 	U.update()
 }
 
@@ -204,12 +211,13 @@ func (U *Ultra) update() {
 	T := app.Widget
 	line := T.Content[0].Content
 	log.Println(line)
-	U.Suggests = []string{}
+	U.Suggests = []AutocompleteItem{}
+	// exact := false
 	for n := range U.Items {
-		if U.Items[n].Test(line) {
-			T.ChangeLine(1, Line{U.Items[n].GetText(line), []HighlightRule{}})
-			return
-		}
+		// if U.Items[n].Test(line) {
+		// 	T.ChangeLine(1, Line{U.Items[n].GetText(line), []HighlightRule{}})
+		// 	exact = true
+		// }
 		if line != "" {
 			s := U.Items[n].GetSuggests(line)
 			for i := range s {
@@ -218,12 +226,24 @@ func (U *Ultra) update() {
 		}
 	}
 	if line != "" {
-		T.ChangeLine(1, Line{"No results... Confirm to search in Google.", []HighlightRule{HighlightRule{0, -1, "gray", "default"}}})
-		for i := range U.Suggests {
-			l := U.Suggests[i]
-			log.Println(l)
-			T.ChangeLine(1+i, Line{l, []HighlightRule{}})
+		// if !exact {
+		// } else {
+		if len(U.Suggests) > 1 {
+			tmp := make([]Line, len(T.Content))
+			copy(tmp, T.Content)
+			newContent := tmp[:1]
+			for _, item := range U.Suggests {
+				newContent = append(newContent, Line{item.Command.GetText(item.Text), []HighlightRule{}})
+			}
+			T.SetContent(newContent)
+		} else {
+			if len(U.Suggests) == 1 {
+				T.ChangeLine(1, Line{U.Suggests[0].Command.GetText(U.Suggests[0].Text), []HighlightRule{}})
+			} else {
+				T.ChangeLine(1, Line{"No results... Confirm to search in Google.", []HighlightRule{HighlightRule{0, -1, "gray", "default"}}})
+			}
 		}
+		// }
 	} else {
 		T.ChangeLine(1, Line{"Type anything...", []HighlightRule{HighlightRule{0, -1, "gray", "default"}}})
 	}

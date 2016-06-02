@@ -2,16 +2,30 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"math"
+	"os"
 	"strings"
 )
 
 type RunCommand struct {
 	Mapping map[string]func(string) int
+	cmd     []string
 }
 
 func (Cmd *RunCommand) Init() {
 	Cmd.Mapping = map[string]func(string) int{
 		"!": execCommand,
+	}
+	pathes := strings.Split(os.Getenv("PATH"), ":")
+	for _, path := range pathes {
+		fi, _ := ioutil.ReadDir(path)
+		for n := range fi {
+			line := fi[n].Name()
+			if !stringInSlice(line, Cmd.cmd) {
+				Cmd.cmd = append(Cmd.cmd, line)
+			}
+		}
 	}
 }
 
@@ -34,9 +48,22 @@ func (Cmd *RunCommand) Exec(line string) int {
 }
 
 func (Cmd *RunCommand) GetText(line string) string {
-	return fmt.Sprintf("Run commands: %s", line[2:])
+	return fmt.Sprintf("Run commands: %s", line)
 }
 
-func (Cmd *RunCommand) GetSuggests(line string) []string {
-	return []string{}
+func (Cmd *RunCommand) GetSuggests(line string) []AutocompleteItem {
+	s := []AutocompleteItem{}
+	// return s
+	if !strings.HasPrefix(line, "! ") {
+		return s
+	}
+	line = line[2:]
+	for c := range Cmd.cmd {
+		cmd := Cmd.cmd[c]
+		if strings.HasPrefix(cmd, line) {
+			s = append(s, AutocompleteItem{Cmd, cmd})
+		}
+	}
+	l := math.Min(float64(len(s)), float64(12))
+	return s[:int(l)]
 }

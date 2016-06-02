@@ -31,11 +31,11 @@ func (Cmd *SessionCommand) GetText(line string) string {
 	return fmt.Sprintf("%s session", line)
 }
 
-func (Cmd *SessionCommand) GetSuggests(line string) []string {
-	s := []string{}
+func (Cmd *SessionCommand) GetSuggests(line string) []AutocompleteItem {
+	s := []AutocompleteItem{}
 	for c := range Cmd.Mapping {
 		if strings.HasPrefix(c, line) {
-			s = append(s, c)
+			s = append(s, AutocompleteItem{Cmd, c})
 		}
 	}
 	return s
