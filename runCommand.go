@@ -36,3 +36,7 @@ func (Cmd *RunCommand) Exec(line string) int {
 func (Cmd *RunCommand) GetText(line string) string {
 	return fmt.Sprintf("Run commands: %s", line[2:])
 }
+
+func (Cmd *RunCommand) GetSuggests(line string) []string {
+	return []string{}
+}

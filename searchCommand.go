@@ -77,3 +77,7 @@ func openURL(url string) int {
 	}
 	return 0
 }
+
+func (Cmd *SearchCommand) GetSuggests(line string) []string {
+	return []string{}
+}

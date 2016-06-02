@@ -36,3 +36,13 @@ func (Cmd *TasksCommand) Exec(line string) int {
 func (Cmd *TasksCommand) GetText(line string) string {
 	return fmt.Sprintf("Switch to %s", line)
 }
+
+func (Cmd *TasksCommand) GetSuggests(line string) []string {
+	s := []string{}
+	for c := range Cmd.Mapping {
+		if strings.HasPrefix(c, line) {
+			s = append(s, c)
+		}
+	}
+	return s
+}

@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type SessionCommand struct {
 	Mapping map[string]func(string) int
@@ -26,4 +29,14 @@ func (Cmd *SessionCommand) Exec(line string) int {
 func (Cmd *SessionCommand) GetText(line string) string {
 	// line[0] = strings.ToUpper(line[0])
 	return fmt.Sprintf("%s session", line)
+}
+
+func (Cmd *SessionCommand) GetSuggests(line string) []string {
+	s := []string{}
+	for c := range Cmd.Mapping {
+		if strings.HasPrefix(c, line) {
+			s = append(s, c)
+		}
+	}
+	return s
 }

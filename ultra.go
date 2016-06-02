@@ -13,6 +13,7 @@ type Command interface {
 	Test(string) bool
 	GetText(string) string
 	Exec(string) int
+	GetSuggests(string) []string
 }
 
 //Ultra mode
@@ -153,10 +154,10 @@ func (U *Ultra) DispatchKeys(t *sdl.KeyDownEvent) int {
 	// 	R.prev()
 	// 	return 1
 	// }
-	// if key == "Tab" {
-	// 	R.autocomplete()
-	// 	return 1
-	// }
+	if key == "Tab" {
+		U.autocomplete()
+		return 1
+	}
 	if (key == "J" && t.Keysym.Mod == 64) || t.Keysym.Sym == sdl.K_RETURN {
 		ret := U.execInput(T.Content[0].Content)
 		if ret != 0 {
@@ -191,19 +192,38 @@ func (U *Ultra) DispatchKeys(t *sdl.KeyDownEvent) int {
 	return 1
 }
 
+func (U *Ultra) autocomplete() {
+	app := U.App
+	T := app.Widget
+	T.ChangeLine(0, Line{U.Suggests[0], []HighlightRule{HighlightRule{0, -1, GREEN, "default"}}})
+	U.update()
+}
+
 func (U *Ultra) update() {
 	app := U.App
 	T := app.Widget
 	line := T.Content[0].Content
 	log.Println(line)
+	U.Suggests = []string{}
 	for n := range U.Items {
 		if U.Items[n].Test(line) {
 			T.ChangeLine(1, Line{U.Items[n].GetText(line), []HighlightRule{}})
 			return
 		}
+		if line != "" {
+			s := U.Items[n].GetSuggests(line)
+			for i := range s {
+				U.Suggests = append(U.Suggests, s[i])
+			}
+		}
 	}
 	if line != "" {
 		T.ChangeLine(1, Line{"No results... Confirm to search in Google.", []HighlightRule{HighlightRule{0, -1, "gray", "default"}}})
+		for i := range U.Suggests {
+			l := U.Suggests[i]
+			log.Println(l)
+			T.ChangeLine(1+i, Line{l, []HighlightRule{}})
+		}
 	} else {
 		T.ChangeLine(1, Line{"Type anything...", []HighlightRule{HighlightRule{0, -1, "gray", "default"}}})
 	}
@@ -218,7 +238,6 @@ func (U *Ultra) execInput(line string) int {
 	}
 	if line != "" {
 		return U.execInput("g " + line)
-	} else {
-		return 1
 	}
+	return 1
 }
