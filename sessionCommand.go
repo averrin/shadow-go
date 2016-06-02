@@ -1,9 +1,6 @@
 package main
 
-import (
-	"fmt"
-	"strings"
-)
+import "fmt"
 
 type SessionCommand struct {
 	Mapping map[string]func(string) int
@@ -27,5 +24,6 @@ func (Cmd *SessionCommand) Exec(line string) int {
 }
 
 func (Cmd *SessionCommand) GetText(line string) string {
-	return fmt.Sprintf("%s session", strings.ToTitle(line))
+	// line[0] = strings.ToUpper(line[0])
+	return fmt.Sprintf("%s session", line)
 }

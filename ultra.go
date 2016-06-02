@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"strings"
 
@@ -52,16 +51,14 @@ func (U *Ultra) Init() WidgetSettings {
 	}
 	app.Window = window
 	// U.History = readExec()
-	search := new(SearchCommand)
-	search.Init()
-	run := new(RunCommand)
-	run.Init()
-	session := new(SessionCommand)
-	session.Init()
 	U.Items = []Command{
-		search,
-		run,
-		session,
+		new(SearchCommand),
+		new(RunCommand),
+		new(SessionCommand),
+		new(TasksCommand),
+	}
+	for n := range U.Items {
+		U.Items[n].Init()
 	}
 	// U.Suggests = U.Items[:12]
 
@@ -83,6 +80,7 @@ func (U *Ultra) Draw() {
 	T.DrawColoredText("\uf054", &r, ACCENT, "bold", []HighlightRule{})
 	T.AddLine(Line{"", []HighlightRule{}})
 	T.MoveCursor(0, 0)
+	T.ChangeLine(1, Line{"Type anything...", []HighlightRule{HighlightRule{0, -1, "gray", "default"}}})
 	// b := math.Min(float64(len(U.Items)), float64(12))
 	// for _, e := range U.Items[:int(b)] {
 	// 	T.AddLine(Line{e.GetText(""), []HighlightRule{}})
@@ -98,8 +96,8 @@ func (U *Ultra) DispatchEvents(event sdl.Event) int {
 func (U *Ultra) DispatchKeys(t *sdl.KeyDownEvent) int {
 	app := U.App
 	T := app.Widget
-	fmt.Printf("[%d ms] Keyboard\ttype:%d\tname:%s\tmodifiers:%d\tstate:%d\trepeat:%d\tsym: %c\n",
-		t.Timestamp, t.Type, sdl.GetScancodeName(t.Keysym.Scancode), t.Keysym.Mod, t.State, t.Repeat, t.Keysym.Sym)
+	// fmt.Printf("[%d ms] Keyboard\ttype:%d\tname:%s\tmodifiers:%d\tstate:%d\trepeat:%d\tsym: %c\n",
+	// 	t.Timestamp, t.Type, sdl.GetScancodeName(t.Keysym.Scancode), t.Keysym.Mod, t.State, t.Repeat, t.Keysym.Sym)
 	key := sdl.GetScancodeName(t.Keysym.Scancode)
 	if t.Keysym.Sym == sdl.K_ESCAPE || t.Keysym.Sym == sdl.K_CAPSLOCK {
 		return 0
@@ -204,7 +202,11 @@ func (U *Ultra) update() {
 			return
 		}
 	}
-	T.ChangeLine(1, Line{"No results...", []HighlightRule{HighlightRule{0, -1, "gray", "default"}}})
+	if line != "" {
+		T.ChangeLine(1, Line{"No results... Confirm to search in Google.", []HighlightRule{HighlightRule{0, -1, "gray", "default"}}})
+	} else {
+		T.ChangeLine(1, Line{"Type anything...", []HighlightRule{HighlightRule{0, -1, "gray", "default"}}})
+	}
 }
 
 func (U *Ultra) execInput(line string) int {
@@ -214,5 +216,9 @@ func (U *Ultra) execInput(line string) int {
 			return U.Items[n].Exec(line)
 		}
 	}
-	return 1
+	if line != "" {
+		return U.execInput("g " + line)
+	} else {
+		return 1
+	}
 }
