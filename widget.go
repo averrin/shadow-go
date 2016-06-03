@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"log"
 	"math"
 	"os"
@@ -145,6 +146,16 @@ func NewTextWidget(app *Application, renderer *sdl.Renderer, surface *sdl.Surfac
 	widget.Geometry = settings.Geometry
 	widget.Padding = settings.Padding
 	return widget
+}
+
+//AddColor id method for custom color
+func (T *TextWidget) AddColor(name string, r uint8, g uint8, b uint8) {
+	T.Colors[name] = sdl.Color{
+		R: r,
+		G: g,
+		B: b,
+		A: 1,
+	}
 }
 
 // SetContent is
@@ -346,7 +357,13 @@ func (T *TextWidget) DrawText(text string, rect *sdl.Rect, colorName string, fon
 	}
 	color, ok := T.Colors[colorName]
 	if !ok {
-		color = T.Colors["foreground"]
+		colorHex, err := hex.DecodeString(colorName[1:])
+		if err != nil || len(colorHex) < 3 {
+			color = T.Colors["foreground"]
+		} else {
+			T.AddColor(colorName, colorHex[0], colorHex[1], colorHex[2])
+			color = T.Colors[colorName]
+		}
 	}
 	message, err := font.RenderUTF8_Blended(text, color)
 	if err != nil {
