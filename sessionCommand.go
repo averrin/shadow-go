@@ -26,9 +26,9 @@ func (Cmd *SessionCommand) Exec(line string) int {
 	return Cmd.Mapping[line](line)
 }
 
-func (Cmd *SessionCommand) GetText(line string) string {
+func (Cmd *SessionCommand) GetText(line string) Line {
 	// line[0] = strings.ToUpper(line[0])
-	return fmt.Sprintf("%s session", line)
+	return Line{fmt.Sprintf("%s session", line), []HighlightRule{}}
 }
 
 func (Cmd *SessionCommand) GetSuggests(line string) []AutocompleteItem {

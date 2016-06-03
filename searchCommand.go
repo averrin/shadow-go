@@ -38,7 +38,7 @@ func (Cmd *SearchCommand) Exec(line string) int {
 	return Cmd.Mapping[p](line[len(p)+1:])
 }
 
-func (Cmd *SearchCommand) GetText(line string) string {
+func (Cmd *SearchCommand) GetText(line string) Line {
 	p := Cmd.getPrefix(line)
 	log.Println(p, line)
 	mapping := map[string]string{
@@ -48,7 +48,7 @@ func (Cmd *SearchCommand) GetText(line string) string {
 		"m":  "Google Music",
 	}
 	place := mapping[p]
-	return fmt.Sprintf("Search in %s: %s", place, line[len(p)+1:])
+	return Line{fmt.Sprintf("Search in %s: %s", place, line[len(p)+1:]), []HighlightRule{}}
 }
 
 func searchInGoogle(q string) int {

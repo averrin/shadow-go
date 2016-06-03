@@ -11,7 +11,7 @@ import (
 type Command interface {
 	Init()
 	Test(string) bool
-	GetText(string) string
+	GetText(string) Line
 	Exec(string) int
 	GetSuggests(string) []AutocompleteItem
 }
@@ -225,28 +225,25 @@ func (U *Ultra) update() {
 			}
 		}
 	}
+	tmp := make([]Line, len(T.Content))
+	copy(tmp, T.Content)
+	newContent := tmp[:1]
 	if line != "" {
-		// if !exact {
-		// } else {
 		if len(U.Suggests) > 1 {
-			tmp := make([]Line, len(T.Content))
-			copy(tmp, T.Content)
-			newContent := tmp[:1]
 			for _, item := range U.Suggests {
-				newContent = append(newContent, Line{item.Command.GetText(item.Text), []HighlightRule{}})
+				newContent = append(newContent, item.Command.GetText(item.Text))
 			}
-			T.SetContent(newContent)
 		} else {
 			if len(U.Suggests) == 1 {
-				T.ChangeLine(1, Line{U.Suggests[0].Command.GetText(U.Suggests[0].Text), []HighlightRule{}})
+				newContent = append(newContent, U.Suggests[0].Command.GetText(U.Suggests[0].Text))
 			} else {
-				T.ChangeLine(1, Line{"No results... Confirm to search in Google.", []HighlightRule{HighlightRule{0, -1, "gray", "default"}}})
+				newContent = append(newContent, Line{"No results... Confirm to search in Google.", []HighlightRule{HighlightRule{0, -1, "gray", "default"}}})
 			}
 		}
-		// }
 	} else {
-		T.ChangeLine(1, Line{"Type anything...", []HighlightRule{HighlightRule{0, -1, "gray", "default"}}})
+		newContent = append(newContent, Line{"Type anything...", []HighlightRule{HighlightRule{0, -1, "gray", "default"}}})
 	}
+	T.SetContent(newContent)
 }
 
 func (U *Ultra) execInput(line string) int {

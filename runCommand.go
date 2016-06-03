@@ -23,7 +23,7 @@ func (Cmd *RunCommand) Init() {
 		for n := range fi {
 			line := fi[n].Name()
 			if !stringInSlice(line, Cmd.cmd) {
-				Cmd.cmd = append(Cmd.cmd, line)
+				Cmd.cmd = append(Cmd.cmd, "! "+line)
 			}
 		}
 	}
@@ -47,17 +47,17 @@ func (Cmd *RunCommand) Exec(line string) int {
 	return Cmd.Mapping[p](line[len(p)+1:])
 }
 
-func (Cmd *RunCommand) GetText(line string) string {
-	return fmt.Sprintf("Run commands: %s", line)
+func (Cmd *RunCommand) GetText(line string) Line {
+	return Line{fmt.Sprintf("Run commands: %s", line[2:]), []HighlightRule{}}
 }
 
 func (Cmd *RunCommand) GetSuggests(line string) []AutocompleteItem {
 	s := []AutocompleteItem{}
 	// return s
-	if !strings.HasPrefix(line, "! ") {
-		return s
-	}
-	line = line[2:]
+	// if !strings.HasPrefix(line, "! ") {
+	// 	return s
+	// }
+	// line = line[2:]
 	for c := range Cmd.cmd {
 		cmd := Cmd.cmd[c]
 		if strings.HasPrefix(cmd, line) {

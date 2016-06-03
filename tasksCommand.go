@@ -33,8 +33,8 @@ func (Cmd *TasksCommand) Exec(line string) int {
 	return Cmd.Mapping[strings.ToLower(line)](line)
 }
 
-func (Cmd *TasksCommand) GetText(line string) string {
-	return fmt.Sprintf("Switch to %s", line)
+func (Cmd *TasksCommand) GetText(line string) Line {
+	return Line{fmt.Sprintf("Switch to %s", line), []HighlightRule{}}
 }
 
 func (Cmd *TasksCommand) GetSuggests(line string) []AutocompleteItem {
