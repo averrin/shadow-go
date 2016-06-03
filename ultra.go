@@ -63,6 +63,7 @@ func (U *Ultra) Init() WidgetSettings {
 		new(RunCommand),
 		new(SessionCommand),
 		new(TasksCommand),
+		new(MathCommand),
 	}
 	for n := range U.Items {
 		U.Items[n].Init()
