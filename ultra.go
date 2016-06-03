@@ -67,6 +67,7 @@ func (U *Ultra) Init() WidgetSettings {
 		new(TasksCommand),
 		new(MathCommand),
 		new(ColorCommand),
+		new(UpdateCommand),
 	}
 	for n := range U.Items {
 		U.Items[n].Init()
@@ -255,7 +256,7 @@ func (U *Ultra) update() {
 	app := U.App
 	T := app.Widget
 	line := T.Content[0].Content
-	log.Println(line)
+	// log.Println(line)
 	U.Suggests = []AutocompleteItem{}
 	for n := range U.Items {
 		if line != "" {

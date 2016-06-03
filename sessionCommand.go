@@ -28,7 +28,7 @@ func (Cmd *SessionCommand) Exec(line string) int {
 
 func (Cmd *SessionCommand) GetText(line string) Line {
 	// line[0] = strings.ToUpper(line[0])
-	return Line{fmt.Sprintf("%s session", line), []HighlightRule{}}
+	return Line{fmt.Sprintf("Lock session"), []HighlightRule{}}
 }
 
 func (Cmd *SessionCommand) GetSuggests(line string) []AutocompleteItem {

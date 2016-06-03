@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -15,7 +16,8 @@ type RunCommand struct {
 
 func (Cmd *RunCommand) Init() {
 	Cmd.Mapping = map[string]func(string) int{
-		"!": execCommand,
+		"!":  execCommand,
+		"!!": execCommandShell,
 	}
 	pathes := strings.Split(os.Getenv("PATH"), ":")
 	for _, path := range pathes {
@@ -61,4 +63,15 @@ func (Cmd *RunCommand) GetSuggests(line string) []AutocompleteItem {
 	}
 	l := math.Min(float64(len(s)), float64(12))
 	return s[:int(l)]
+}
+
+func execCommandShell(cmd string) int {
+	cmd = "konsole -e " + cmd
+	tokens := strings.Split(cmd, " ")
+	c := exec.Command(tokens[0], tokens[1:]...)
+	err := c.Start()
+	if err != nil {
+		return 1
+	}
+	return 0
 }
