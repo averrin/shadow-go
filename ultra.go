@@ -171,14 +171,14 @@ func (U *Ultra) DispatchKeys(t *sdl.KeyDownEvent) int {
 		U.update()
 		return 1
 	}
-	// if key == "Down" || (key == "N" && t.Keysym.Mod == 64) {
-	// 	R.next()
-	// 	return 1
-	// }
-	// if key == "Up" || (key == "P" && t.Keysym.Mod == 64) {
-	// 	R.prev()
-	// 	return 1
-	// }
+	if key == "Down" || (key == "N" && t.Keysym.Mod == 64) {
+		U.next()
+		return 1
+	}
+	if key == "Up" || (key == "P" && t.Keysym.Mod == 64) {
+		U.prev()
+		return 1
+	}
 	if key == "Tab" {
 		U.autocomplete()
 		return 1
@@ -208,6 +208,30 @@ func (U *Ultra) DispatchKeys(t *sdl.KeyDownEvent) int {
 	return 1
 }
 
+func (U *Ultra) next() {
+	T := U.App.Widget
+	T.SetRules(U.Selected+1, []HighlightRule{HighlightRule{0, -1, "default", "default"}})
+	U.Selected++
+	if U.Selected == len(U.Suggests) {
+		U.Selected = 0
+	}
+	T.SetRules(U.Selected+1, []HighlightRule{HighlightRule{0, -1, "highlight", "bold"}})
+	T.ChangeLine(0, Line{U.Suggests[U.Selected].Text, []HighlightRule{HighlightRule{0, -1, GREEN, "default"}}})
+	T.MoveCursor(0, len(U.Suggests[U.Selected].Text))
+}
+
+func (U *Ultra) prev() {
+	T := U.App.Widget
+	T.SetRules(U.Selected+1, []HighlightRule{HighlightRule{0, -1, "default", "default"}})
+	if U.Selected == 0 {
+		U.Selected = len(U.Suggests)
+	}
+	U.Selected--
+	T.SetRules(U.Selected+1, []HighlightRule{HighlightRule{0, -1, "highlight", "bold"}})
+	T.ChangeLine(0, Line{U.Suggests[U.Selected].Text, []HighlightRule{HighlightRule{0, -1, GREEN, "default"}}})
+	T.MoveCursor(0, len(U.Suggests[U.Selected].Text))
+}
+
 func (U *Ultra) autocomplete() {
 	app := U.App
 	T := app.Widget
@@ -222,12 +246,7 @@ func (U *Ultra) update() {
 	line := T.Content[0].Content
 	log.Println(line)
 	U.Suggests = []AutocompleteItem{}
-	// exact := false
 	for n := range U.Items {
-		// if U.Items[n].Test(line) {
-		// 	T.ChangeLine(1, Line{U.Items[n].GetText(line), []HighlightRule{}})
-		// 	exact = true
-		// }
 		if line != "" {
 			s := U.Items[n].GetSuggests(line)
 			for i := range s {

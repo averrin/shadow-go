@@ -53,11 +53,6 @@ func (Cmd *RunCommand) GetText(line string) Line {
 
 func (Cmd *RunCommand) GetSuggests(line string) []AutocompleteItem {
 	s := []AutocompleteItem{}
-	// return s
-	// if !strings.HasPrefix(line, "! ") {
-	// 	return s
-	// }
-	// line = line[2:]
 	for c := range Cmd.cmd {
 		cmd := Cmd.cmd[c]
 		if strings.HasPrefix(cmd, line) {
