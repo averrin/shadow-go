@@ -7,6 +7,8 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+var symbols map[string]string
+
 //Command interface
 type Command interface {
 	Init()
@@ -67,6 +69,22 @@ func (U *Ultra) Init() WidgetSettings {
 	}
 	for n := range U.Items {
 		U.Items[n].Init()
+	}
+
+	symbols = map[string]string{
+		"-": "_",
+		"=": "+",
+		";": ";",
+		"1": "!",
+		"2": "@",
+		"3": "#",
+		"4": "$",
+		"5": "%",
+		"6": "^",
+		"7": "&",
+		"8": "*",
+		"9": "(",
+		"0": ")",
 	}
 	// U.Suggests = U.Items[:12]
 
@@ -172,21 +190,6 @@ func (U *Ultra) DispatchKeys(t *sdl.KeyDownEvent) int {
 			T.drawCursor()
 		}
 		return ret
-	}
-	symbols := map[string]string{
-		"-": "_",
-		"=": "+",
-		";": ";",
-		"1": "!",
-		"2": "@",
-		"3": "#",
-		"4": "$",
-		"5": "%",
-		"6": "^",
-		"7": "&",
-		"8": "*",
-		"9": "(",
-		"0": ")",
 	}
 	if isASCII(string(t.Keysym.Sym)) && t.Keysym.Mod <= 1 {
 		T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})

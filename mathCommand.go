@@ -15,7 +15,7 @@ type MathCommand struct {
 
 func (Cmd *MathCommand) Init() {
 	Cmd.Mapping = map[string]func(string) int{
-		"= ": func(string) int { return 0 },
+		"=": func(string) int { return 0 },
 	}
 }
 
@@ -30,17 +30,21 @@ func (Cmd *MathCommand) Exec(line string) int {
 
 func (Cmd *MathCommand) GetText(line string) Line {
 	// line[0] = strings.ToUpper(line[0])
-	expr := calc(line[2:])
+	expr := calc(line[1:])
 	log.Println(expr)
 	if expr != nil {
 		return Line{fmt.Sprintf("= %v", expr), []HighlightRule{}}
 	}
-	return Line{fmt.Sprintf("Wrong expression"), []HighlightRule{HighlightRule{0, -1, "red", "default"}}}
+	if strings.TrimSpace(line) != "=" {
+		return Line{fmt.Sprintf("Wrong expression"), []HighlightRule{HighlightRule{0, -1, "red", "default"}}}
+	} else {
+		return Line{fmt.Sprintf("Type expression to calc"), []HighlightRule{}}
+	}
 }
 
 func (Cmd *MathCommand) GetSuggests(line string) []AutocompleteItem {
 	s := []AutocompleteItem{}
-	if strings.HasPrefix(line, "= ") {
+	if strings.HasPrefix(line, "=") {
 		s = append(s, AutocompleteItem{Cmd, line})
 	}
 	return s
