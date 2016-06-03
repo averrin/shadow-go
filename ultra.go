@@ -235,9 +235,19 @@ func (U *Ultra) prev() {
 func (U *Ultra) autocomplete() {
 	app := U.App
 	T := app.Widget
-	T.ChangeLine(0, Line{U.Suggests[0].Text, []HighlightRule{HighlightRule{0, -1, GREEN, "default"}}})
-	T.MoveCursor(0, len(U.Suggests[0].Text))
-	U.update()
+	line := T.Content[0].Content
+	i := U.Selected
+	if i == -1 {
+		i = 0
+		U.Selected = 0
+	}
+	if line != U.Suggests[i].Text {
+		T.ChangeLine(0, Line{U.Suggests[i].Text, []HighlightRule{HighlightRule{0, -1, GREEN, "default"}}})
+		T.MoveCursor(0, len(U.Suggests[i].Text))
+		U.update()
+	} else {
+		U.next()
+	}
 }
 
 func (U *Ultra) update() {
