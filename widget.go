@@ -395,6 +395,9 @@ func (T *TextWidget) DrawColoredText(text string, rect *sdl.Rect, colorName stri
 	} else {
 		var token string
 		for i := range rules {
+			if rules[i].Start >= len(text) {
+				rules[i].Start = len(text)
+			}
 			token = text[:rules[i].Start]
 			// log.Println(token)
 			var tw int

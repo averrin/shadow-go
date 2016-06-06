@@ -243,6 +243,9 @@ func (U *Ultra) autocomplete() {
 		i = 0
 		U.Selected = 0
 	}
+	if len(U.Suggests) == 0 {
+		return
+	}
 	if line != U.Suggests[i].Text {
 		T.ChangeLine(0, Line{U.Suggests[i].Text, []HighlightRule{HighlightRule{0, -1, GREEN, "default"}}})
 		T.MoveCursor(0, len(U.Suggests[i].Text))

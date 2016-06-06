@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/BurntSushi/xgbutil/ewmh"
@@ -12,7 +13,9 @@ type TasksCommand struct {
 }
 
 func (Cmd *TasksCommand) Init() {
-	Cmd.Mapping = map[string]func(string) int{}
+	Cmd.Mapping = map[string]func(string) int{
+		"switch ": func(string) int { return 0 },
+	}
 	clients := GetClients()
 	for n := range clients {
 		c := clients[n]
@@ -40,7 +43,10 @@ func (Cmd *TasksCommand) Exec(line string) int {
 }
 
 func (Cmd *TasksCommand) GetText(line string) Line {
-	return Line{fmt.Sprintf("Switch to %s", line), []HighlightRule{}}
+	if strings.TrimSpace(line) != "switch" {
+		return Line{fmt.Sprintf("Switch to %s", line), []HighlightRule{HighlightRule{9, len(line), "foreground", "bold"}}}
+	}
+	return Line{fmt.Sprintf("Switch task..."), []HighlightRule{}}
 }
 
 func (Cmd *TasksCommand) GetSuggests(line string) []AutocompleteItem {
@@ -48,7 +54,11 @@ func (Cmd *TasksCommand) GetSuggests(line string) []AutocompleteItem {
 	if strings.HasPrefix(line, "switch ") {
 		line = strings.Split(line, " ")[1]
 	}
+	log.Println(line)
 	for c := range Cmd.Mapping {
+		if c == "switch " && strings.TrimSpace(line) == "" {
+			continue
+		}
 		if strings.HasPrefix(c, line) {
 			s = append(s, AutocompleteItem{Cmd, c})
 		}
