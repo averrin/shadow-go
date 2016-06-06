@@ -44,7 +44,7 @@ func (Cmd *TasksCommand) Exec(line string) int {
 
 func (Cmd *TasksCommand) GetText(line string) Line {
 	if strings.TrimSpace(line) != "switch" {
-		return Line{fmt.Sprintf("Switch to %s", line), []HighlightRule{HighlightRule{9, len(line), "foreground", "bold"}}}
+		return Line{fmt.Sprintf("Switch to %s", line), []HighlightRule{HighlightRule{10, len(line), "foreground", "bold"}}}
 	}
 	return Line{fmt.Sprintf("Switch task..."), []HighlightRule{}}
 }
