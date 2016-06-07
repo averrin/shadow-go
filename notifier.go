@@ -62,8 +62,8 @@ func (N *Notifier) Draw() {
 		Line{"", []HighlightRule{}},
 	}
 	t := strings.Split(*TEXT, "\n")
-	for l := range t {
-		line := strings.TrimSpace(t[l])
+	for _, line := range t {
+		line = strings.TrimSpace(line)
 		content = append(content, Line{line, []HighlightRule{}})
 	}
 

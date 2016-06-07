@@ -59,8 +59,8 @@ func (R *Runner) getExec() []string {
 	pathes := strings.Split(os.Getenv("PATH"), ":")
 	for _, path := range pathes {
 		fi, _ := ioutil.ReadDir(path)
-		for n := range fi {
-			line := fi[n].Name()
+		for _, line := range fi {
+			line := line.Name()
 			if !stringInSlice(line, ret) {
 				ret = append(ret, line)
 			}

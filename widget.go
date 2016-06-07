@@ -168,11 +168,11 @@ func (T *TextWidget) SetContent(content []Line) {
 		T.Update()
 		return
 	}
-	for i := range content {
+	for i, line := range content {
 		if i < l {
-			T.ChangeLine(i, content[i])
+			T.ChangeLine(i, line)
 		} else {
-			T.AddLine(content[i])
+			T.AddLine(line)
 		}
 	}
 }
@@ -213,16 +213,13 @@ func (T *TextWidget) ChangeLine(index int, new Line) {
 		T.Content[index] = new
 		T.Surface.FillRect(&r, T.BG)
 		newLine = newLine[int(i):len(newLine)]
-		for n := range new.Rules {
-			// log.Println(newLine, new.Rules[n].Start, int(i))
-			if int(i) > new.Rules[n].Start {
-				new.Rules[n].Start = 0
+		for _, rule := range new.Rules {
+			if int(i) > rule.Start {
+				rule.Start = 0
 			}
 		}
-		// log.Println(index, new, newLine)
 		T.DrawColoredText(newLine,
 			&r, "foreground", "default",
-			// []HighlightRule{HighlightRule{0, -1, "red", "default"}},
 			new.Rules,
 		)
 		T.Renderer.Present()
@@ -406,12 +403,12 @@ func (T *TextWidget) DrawColoredText(text string, rect *sdl.Rect, colorName stri
 		T.DrawText(text, rect, colorName, fontName)
 	} else {
 		var token string
-		for i := range rules {
-			if rules[i].Start < 0 {
+		for _, rule := range rules {
+			if rule.Start < 0 {
 				continue
 			}
 			// log.Println(text, rules[i].Start, len(text))
-			token = text[:rules[i].Start]
+			token = text[:rule.Start]
 			var tw int
 			if len(token) > 0 {
 				T.DrawText(token, rect, colorName, fontName)
@@ -423,15 +420,13 @@ func (T *TextWidget) DrawColoredText(text string, rect *sdl.Rect, colorName stri
 					H: rect.H,
 				}
 			}
-			text = text[rules[i].Start:]
-			// log.Println(text, rules[i].Len)
-			l := rules[i].Len
+			text = text[rule.Start:]
+			l := rule.Len
 			if l > len(text) || l == -1 {
 				l = len(text)
 			}
 			token = text[:l]
-			// log.Println(token)
-			T.DrawText(token, rect, rules[i].Color, rules[i].Font)
+			T.DrawText(token, rect, rule.Color, rule.Font)
 			tw, _, _ = T.Fonts[fontName].SizeUTF8(token)
 			rect = &sdl.Rect{
 				X: rect.X + int32(tw),
@@ -440,7 +435,6 @@ func (T *TextWidget) DrawColoredText(text string, rect *sdl.Rect, colorName stri
 				H: rect.H,
 			}
 			text = text[l:]
-			// log.Println(text)
 		}
 		if len(token) > 0 {
 			T.DrawText(text, rect, colorName, fontName)

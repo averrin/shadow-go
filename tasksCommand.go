@@ -17,10 +17,9 @@ func (Cmd *TasksCommand) Init() {
 		"switch ": func(string) int { return 0 },
 	}
 	clients := GetClients()
-	for n := range clients {
-		c := clients[n]
-		Cmd.Mapping[strings.ToLower(c.Class)] = func(string) int {
-			wid := c.WID
+	for _, client := range clients {
+		Cmd.Mapping[strings.ToLower(client.Class)] = func(string) int {
+			wid := client.WID
 			ewmh.ActiveWindowReq(X, wid)
 			return 0
 		}

@@ -69,8 +69,8 @@ func (U *Ultra) Init() WidgetSettings {
 		new(ColorCommand),
 		new(UpdateCommand),
 	}
-	for n := range U.Items {
-		U.Items[n].Init()
+	for _, command := range U.Items {
+		command.Init()
 	}
 
 	symbols = map[string]string{
@@ -261,11 +261,11 @@ func (U *Ultra) update() {
 	line := T.Content[0].Content
 	// log.Println(line)
 	U.Suggests = []AutocompleteItem{}
-	for n := range U.Items {
+	for _, item := range U.Items {
 		if line != "" {
-			s := U.Items[n].GetSuggests(line)
-			for i := range s {
-				U.Suggests = append(U.Suggests, s[i])
+			s := item.GetSuggests(line)
+			for _, suggest := range s {
+				U.Suggests = append(U.Suggests, suggest)
 			}
 		}
 	}
@@ -292,9 +292,9 @@ func (U *Ultra) update() {
 
 func (U *Ultra) execInput(line string) int {
 	log.Println(line)
-	for n := range U.Items {
-		if U.Items[n].Test(line) {
-			return U.Items[n].Exec(line)
+	for _, item := range U.Items {
+		if item.Test(line) {
+			return item.Exec(line)
 		}
 	}
 	if line != "" {

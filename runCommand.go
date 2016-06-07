@@ -22,8 +22,8 @@ func (Cmd *RunCommand) Init() {
 	pathes := strings.Split(os.Getenv("PATH"), ":")
 	for _, path := range pathes {
 		fi, _ := ioutil.ReadDir(path)
-		for n := range fi {
-			line := fi[n].Name()
+		for _, info := range fi {
+			line := info.Name()
 			if !stringInSlice(line, Cmd.cmd) {
 				Cmd.cmd = append(Cmd.cmd, "! "+line)
 			}
@@ -55,8 +55,7 @@ func (Cmd *RunCommand) GetText(line string) Line {
 
 func (Cmd *RunCommand) GetSuggests(line string) []AutocompleteItem {
 	s := []AutocompleteItem{}
-	for c := range Cmd.cmd {
-		cmd := Cmd.cmd[c]
+	for _, cmd := range Cmd.cmd {
 		if strings.HasPrefix(cmd, line) {
 			s = append(s, AutocompleteItem{Cmd, cmd})
 		}
