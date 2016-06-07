@@ -128,6 +128,14 @@ func (R *Runner) DispatchKeys(t *sdl.KeyDownEvent) int {
 	if t.Keysym.Sym == sdl.K_ESCAPE || t.Keysym.Sym == sdl.K_CAPSLOCK {
 		return 0
 	}
+	if (key == "A" && t.Keysym.Mod == 64) || key == "Home" {
+		T.MoveCursor(T.Cursor.Row, 0)
+		return 1
+	}
+	if (key == "U" && t.Keysym.Mod == 64) || key == "End" {
+		T.MoveCursor(T.Cursor.Row, len(T.Content[T.Cursor.Row].Content))
+		return 1
+	}
 	if (key == "H" && t.Keysym.Mod == 64) || key == "Backspace" {
 		T.SetRules(0, []HighlightRule{HighlightRule{0, -1, "foreground", "default"}})
 		T.removeString(1)
