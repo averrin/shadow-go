@@ -33,7 +33,7 @@ func (Cmd *MathCommand) GetText(line string) Line {
 	expr := calc(line[1:])
 	log.Println(expr)
 	if expr != nil {
-		return Line{fmt.Sprintf("= %v", expr), []HighlightRule{HighlightRule{2, len(fmt.Sprintf("%v", expr)), "foreground", "bold"}}}
+		return Line{fmt.Sprintf("= %v", expr), []HighlightRule{HighlightRule{2, -1, "foreground", "bold"}}}
 	}
 	if strings.TrimSpace(line) != "=" {
 		return Line{fmt.Sprintf("Wrong expression"), []HighlightRule{HighlightRule{0, -1, "red", "default"}}}

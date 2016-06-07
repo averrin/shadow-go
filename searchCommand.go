@@ -48,7 +48,8 @@ func (Cmd *SearchCommand) GetText(line string) Line {
 		"m":  "Google Music",
 	}
 	place := mapping[p]
-	return Line{fmt.Sprintf("Search in %s: %s", place, line[len(p)+1:]), []HighlightRule{HighlightRule{9 + len(place) + 2, len(line[len(p)+1:]) + 1, "foreground", "bold"}}}
+	return Line{fmt.Sprintf("Search in %s: %s", place, line[len(p)+1:]),
+		[]HighlightRule{HighlightRule{9 + len(place) + 2, -1, "foreground", "bold"}}}
 }
 
 func searchInGoogle(q string) int {

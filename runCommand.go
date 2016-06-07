@@ -50,7 +50,7 @@ func (Cmd *RunCommand) Exec(line string) int {
 }
 
 func (Cmd *RunCommand) GetText(line string) Line {
-	return Line{fmt.Sprintf("Run commands: %s", line[2:]), []HighlightRule{HighlightRule{14, len(line[2:]), "foreground", "bold"}}}
+	return Line{fmt.Sprintf("Run commands: %s", line[2:]), []HighlightRule{HighlightRule{14, -1, "foreground", "bold"}}}
 }
 
 func (Cmd *RunCommand) GetSuggests(line string) []AutocompleteItem {

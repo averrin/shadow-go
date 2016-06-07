@@ -188,6 +188,9 @@ func (T *TextWidget) ChangeLine(index int, new Line) {
 	a := strings.HasPrefix(old.Content, new.Content)
 	b := strings.HasPrefix(new.Content, old.Content)
 	same := sameRules && len(new.Content) > 0 && len(old.Content) > 0 && (a || b)
+	if sameRules && a && b {
+		return
+	}
 	if same {
 		w := T.Geometry.Width
 		i := math.Min(float64(len(new.Content)), float64(len(old.Content)))
@@ -209,7 +212,15 @@ func (T *TextWidget) ChangeLine(index int, new Line) {
 		}
 		T.Content[index] = new
 		T.Surface.FillRect(&r, T.BG)
-		T.DrawColoredText(newLine[int(i):len(newLine)],
+		newLine = newLine[int(i):len(newLine)]
+		for n := range new.Rules {
+			// log.Println(newLine, new.Rules[n].Start, int(i))
+			if int(i) > new.Rules[n].Start {
+				new.Rules[n].Start = 0
+			}
+		}
+		// log.Println(index, new, newLine)
+		T.DrawColoredText(newLine,
 			&r, "foreground", "default",
 			// []HighlightRule{HighlightRule{0, -1, "red", "default"}},
 			new.Rules,
@@ -351,6 +362,7 @@ func (T *TextWidget) DrawText(text string, rect *sdl.Rect, colorName string, fon
 	if strings.TrimSpace(text) == "" {
 		return
 	}
+	// log.Println("DRAW:", text, colorName, fontName)
 	font, ok := T.Fonts[fontName]
 	if !ok {
 		font = T.Fonts["default"]
@@ -395,11 +407,11 @@ func (T *TextWidget) DrawColoredText(text string, rect *sdl.Rect, colorName stri
 	} else {
 		var token string
 		for i := range rules {
-			if rules[i].Start >= len(text) {
-				rules[i].Start = len(text)
+			if rules[i].Start < 0 {
+				continue
 			}
+			// log.Println(text, rules[i].Start, len(text))
 			token = text[:rules[i].Start]
-			// log.Println(token)
 			var tw int
 			if len(token) > 0 {
 				T.DrawText(token, rect, colorName, fontName)
@@ -473,9 +485,10 @@ func (T *TextWidget) MoveCursorDown() (int, int) {
 
 // addString is
 func (T *TextWidget) addString(s string) (int, int) {
-	line := T.Content[T.Cursor.Row]
+	old := T.Content[T.Cursor.Row]
+	content := string([]byte(old.Content))
 	i := T.Cursor.Column
-	line.Content = line.Content[:i] + s + line.Content[i:]
+	line := Line{content[:i] + s + content[i:], old.Rules}
 	T.ChangeLine(0, line)
 	T.MoveCursor(T.Cursor.Row, T.Cursor.Column+len(s))
 	return T.Cursor.Row, T.Cursor.Column
